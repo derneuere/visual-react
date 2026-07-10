@@ -52,23 +52,6 @@ function EditingTab({ inModal = false }: EditingTabProps) {
   );
   const metadata = selectedInstance && getComponentProps(selectedInstance.id);
 
-  if (selectedInstance) {
-    console.log("[EditingTab] selected:", selectedInstance.id, "instanceId:", selectedInstance.props.instanceId);
-    console.log("[EditingTab] metadata found:", !!metadata, {
-      hasPropertyGroups: !!metadata?.propertyGroups,
-      propertyGroupCount: metadata?.propertyGroups?.length,
-      propertyGroupTitles: metadata?.propertyGroups?.map(g => g.title),
-    });
-    if (metadata?.propertyGroups) {
-      metadata.propertyGroups.forEach(g => {
-        if ('component' in g && g.component) {
-          const ext = getEditingExtension(g.component);
-          console.log(`[EditingTab] group "${g.title}" -> extension "${g.component}" found:`, !!ext);
-        }
-      });
-    }
-  }
-
   if (
     (!metadata && selectedInstance) ||
     (!metadata?.defaultProps && selectedInstance)
@@ -394,6 +377,49 @@ function EditingTab({ inModal = false }: EditingTabProps) {
             label={(val) => `${val}`}
           />
         </div>,
+        warning
+      );
+    }
+
+    if (typeof config === "object" && config.type === "color") {
+      const swatch = (color: string) => (
+        <span
+          style={{
+            display: "inline-block",
+            width: 14,
+            height: 14,
+            borderRadius: "50%",
+            background: color,
+            border: "1px solid rgba(0, 0, 0, 0.15)",
+            flexShrink: 0,
+          }}
+        />
+      );
+      const current = typeof value === "string" ? value : "";
+      return withWarning(
+        <Select
+          label={label}
+          description={description}
+          value={current || null}
+          onChange={(val) =>
+            updateInstanceProps(instance.props.instanceId, {
+              [prop]: val,
+            })
+          }
+          data={config.options.map((option) => ({
+            value: option,
+            label: option,
+          }))}
+          leftSection={current ? swatch(current) : undefined}
+          renderOption={({ option }) => (
+            <Group gap="xs" wrap="nowrap">
+              {swatch(option.value)}
+              <span>{option.label}</span>
+            </Group>
+          )}
+          placeholder="Pick a color"
+          error={fieldError?.message}
+        />,
         warning
       );
     }

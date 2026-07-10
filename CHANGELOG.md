@@ -3,7 +3,63 @@
 All notable changes to `@derneuere/visual-react` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## 0.2.0 (unreleased)
+## 0.2.2
+
+### Added
+
+- **Shared tree-move helpers** in the tree utils (core entry):
+  `moveInstanceUp` / `moveInstanceDown` (reorder within the sibling list —
+  the parent's child field, or the tree's top level for root-level nodes),
+  `moveInstanceOut` (reparent to the grandparent, positioned right after the
+  former parent) and `moveInstanceInto` (append into the previous sibling
+  container's first child field). All are pure, unit-tested, never mutate
+  the input tree and return `null` for no-ops (edges, root-level `out`,
+  non-container previous sibling). The bundled `ComponentTree` now delegates
+  to them, deleting its private reimplementations — tree surgery exists
+  exactly once in the package.
+- **`{ type: "color" }` fields render in the editor.** The declared
+  FieldType finally has an `EditingTab` branch: a Mantine `Select` whose
+  options (and current value) show the color as a swatch next to its label.
+  Previously such fields silently rendered nothing.
+- **Configurable export endpoint.** `TopBar` (and `Editor`, which forwards)
+  accepts `exportUrl?: string` (default `"/api/export"`) and
+  `onExport?: () => Promise<void>` as a full override of the built-in
+  fetch-and-download. Additive — existing consumers are unchanged.
+
+### Fixed
+
+- **Palette drops into empty containers are no longer spuriously aborted.**
+  The palette-add path had a leftover guard that resolved a child field and
+  bailed when none was found — but the result was never used
+  (`addItemToParent` derives the field itself), so drops into containers
+  without a resolvable field were dropped on the floor.
+- **New-instance ids use `crypto.randomUUID()`** (palette drops,
+  ComponentExplorer inserts, `addChild`) instead of `Date.now()`, which
+  collides when two instances are created within the same millisecond —
+  duplicated ids broke selection and tree surgery for one of the twins.
+- **Keyboard shortcuts are inert during preview.** The editor now passes
+  `enabled: !isPreview` to `useEditorKeyboardShortcuts`, so Delete/Backspace
+  (and copy/duplicate/paste) can no longer silently mutate the page while
+  previewing.
+- Removed leftover `console.log` debugging from `EditingTab`.
+
+## 0.2.1
+
+### Added
+
+- `ComponentRegistryEntry.Component` is now optional: editors that render in
+  a separate document (iframe canvas) can register metadata-only entries
+  (`defaultProps`/`editableProps`); `ComponentRenderer` skips entries
+  without a `Component`.
+- `FieldValue` and `FieldMetadataEntry` types exported from the core entry.
+- `useEditorKeyboardShortcuts` takes an optional `{ enabled }` gate so
+  consumers can disable shortcuts in read-only states (device previews).
+
+### Package
+
+- Widened the optional `@dnd-kit/sortable` peer range to `^9 || ^10`.
+
+## 0.2.0
 
 ### Package
 

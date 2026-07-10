@@ -496,6 +496,254 @@ export const moveInstance = (
   );
 };
 
+/**
+ * Shared implementation for {@link moveInstanceUp} / {@link moveInstanceDown}:
+ * reorder a node within its sibling list (its parent's child field, or the
+ * tree's top level for root-level nodes) by `offset` positions.
+ *
+ * Returns the new tree, or null when the move is a no-op (node missing, or
+ * already at the edge). The input tree is never mutated.
+ */
+const moveInstanceByOffset = (
+  tree: Instance[],
+  instanceId: number | string,
+  offset: number,
+  hasChildren: (instance: Instance) => boolean,
+  getChildren: (instance: Instance) => string[] | null
+): Instance[] | null => {
+  const reorder = (siblings: Instance[]): Instance[] | null => {
+    const index = siblings.findIndex(
+      (c) => c.props.instanceId === instanceId
+    );
+    if (index < 0) return null;
+    const targetIndex = index + offset;
+    if (targetIndex < 0 || targetIndex >= siblings.length) return null;
+    const next = [...siblings];
+    const [moved] = next.splice(index, 1);
+    next.splice(targetIndex, 0, moved);
+    return next;
+  };
+
+  const parentResult = findParent(tree, instanceId, hasChildren, getChildren);
+
+  if (!parentResult || !parentResult.node) {
+    // Root-level instance: reorder the top level of the tree itself.
+    return reorder(tree);
+  }
+
+  const { node: parent, field } = parentResult;
+  if (!field) return null;
+  const siblings = parent.props[field];
+  if (!Array.isArray(siblings)) return null;
+
+  const newSiblings = reorder(siblings);
+  if (!newSiblings) return null;
+
+  return findAndReplaceNode(
+    tree,
+    parent.props.instanceId,
+    {
+      ...parent,
+      props: { ...parent.props, [field]: newSiblings },
+    },
+    hasChildren,
+    getChildren
+  );
+};
+
+/**
+ * Move a node one position up within its sibling list (parent's child field,
+ * or the tree's top level for root-level nodes).
+ *
+ * Returns the new tree, or null when the move is a no-op (node missing or
+ * already first). The input tree is never mutated.
+ */
+export const moveInstanceUp = (
+  tree: Instance[],
+  instanceId: number | string,
+  hasChildren: (instance: Instance) => boolean,
+  getChildren: (instance: Instance) => string[] | null
+): Instance[] | null =>
+  moveInstanceByOffset(tree, instanceId, -1, hasChildren, getChildren);
+
+/**
+ * Move a node one position down within its sibling list (parent's child
+ * field, or the tree's top level for root-level nodes).
+ *
+ * Returns the new tree, or null when the move is a no-op (node missing or
+ * already last). The input tree is never mutated.
+ */
+export const moveInstanceDown = (
+  tree: Instance[],
+  instanceId: number | string,
+  hasChildren: (instance: Instance) => boolean,
+  getChildren: (instance: Instance) => string[] | null
+): Instance[] | null =>
+  moveInstanceByOffset(tree, instanceId, 1, hasChildren, getChildren);
+
+/**
+ * Move a node OUT of its parent container: it is removed from the parent's
+ * child field and re-inserted as the parent's next sibling (one level up,
+ * positioned right after its former parent — not all the way to the root).
+ *
+ * Returns the new tree, or null when the move is a no-op (node missing or
+ * already at the top level). The input tree is never mutated.
+ */
+export const moveInstanceOut = (
+  tree: Instance[],
+  instanceId: number | string,
+  hasChildren: (instance: Instance) => boolean,
+  getChildren: (instance: Instance) => string[] | null
+): Instance[] | null => {
+  const parentResult = findParent(tree, instanceId, hasChildren, getChildren);
+  if (!parentResult || !parentResult.node) return null; // Already at root
+
+  const { node: parent, field } = parentResult;
+  if (!field) return null;
+
+  const siblings: Instance[] = parent.props[field] || [];
+  const instance = siblings.find((c) => c.props.instanceId === instanceId);
+  if (!instance) return null;
+
+  const newSiblings = siblings.filter(
+    (c) => c.props.instanceId !== instanceId
+  );
+  const updatedParent: Instance = {
+    ...parent,
+    props: { ...parent.props, [field]: newSiblings },
+  };
+
+  const grandparentResult = findParent(
+    tree,
+    parent.props.instanceId,
+    hasChildren,
+    getChildren
+  );
+
+  if (!grandparentResult || !grandparentResult.node) {
+    // Parent is at root level — insert the node right after its parent.
+    const parentIndex = tree.findIndex(
+      (c) => c.props.instanceId === parent.props.instanceId
+    );
+    const step1 = findAndReplaceNode(
+      tree,
+      parent.props.instanceId,
+      updatedParent,
+      hasChildren,
+      getChildren
+    );
+    const result = [...step1];
+    result.splice(parentIndex + 1, 0, instance);
+    return result;
+  }
+
+  const { node: grandparent, field: grandparentField } = grandparentResult;
+  if (!grandparentField) return null;
+  const parentIndex = (grandparent.props[grandparentField] || []).findIndex(
+    (c: Instance) => c.props.instanceId === parent.props.instanceId
+  );
+
+  const step1 = findAndReplaceNode(
+    tree,
+    parent.props.instanceId,
+    updatedParent,
+    hasChildren,
+    getChildren
+  );
+  const updatedGrandparent = findNode(
+    step1,
+    grandparent.props.instanceId,
+    hasChildren,
+    getChildren
+  );
+  if (!updatedGrandparent) return null;
+  const grandchildren = [
+    ...(updatedGrandparent.props[grandparentField] || []),
+  ];
+  grandchildren.splice(parentIndex + 1, 0, instance);
+  const newGrandparent: Instance = {
+    ...updatedGrandparent,
+    props: {
+      ...updatedGrandparent.props,
+      [grandparentField]: grandchildren,
+    },
+  };
+  return findAndReplaceNode(
+    step1,
+    grandparent.props.instanceId,
+    newGrandparent,
+    hasChildren,
+    getChildren
+  );
+};
+
+/**
+ * Move a node INTO its previous sibling, appended as that container's last
+ * child (in the container's first child field). Works at the tree's top
+ * level and inside any container.
+ *
+ * Returns the new tree, or null when the move is a no-op (node missing, no
+ * previous sibling, or the previous sibling is not a container). The input
+ * tree is never mutated.
+ */
+export const moveInstanceInto = (
+  tree: Instance[],
+  instanceId: number | string,
+  hasChildren: (instance: Instance) => boolean,
+  getChildren: (instance: Instance) => string[] | null
+): Instance[] | null => {
+  const parentResult = findParent(tree, instanceId, hasChildren, getChildren);
+  const siblings: Instance[] =
+    parentResult?.node && parentResult.field
+      ? parentResult.node.props[parentResult.field] || []
+      : tree;
+
+  const index = siblings.findIndex((c) => c.props.instanceId === instanceId);
+  if (index <= 0) return null; // Missing, or no previous sibling
+
+  const prevSibling = siblings[index - 1];
+  if (!hasChildren(prevSibling)) return null;
+
+  const childFields = getChildren(prevSibling);
+  if (!childFields || childFields.length === 0) return null;
+  const targetField = childFields[0];
+
+  const instance = siblings[index];
+  const updatedPrevSibling: Instance = {
+    ...prevSibling,
+    props: {
+      ...prevSibling.props,
+      [targetField]: [...(prevSibling.props[targetField] || []), instance],
+    },
+  };
+
+  const newSiblings = siblings
+    .filter((c) => c.props.instanceId !== instanceId)
+    .map((c) =>
+      c.props.instanceId === prevSibling.props.instanceId
+        ? updatedPrevSibling
+        : c
+    );
+
+  if (!parentResult || !parentResult.node) {
+    // Root level: the sibling list IS the tree's top level.
+    return newSiblings;
+  }
+
+  const { node: parent, field } = parentResult;
+  if (!field) return null;
+  return findAndReplaceNode(
+    tree,
+    parent.props.instanceId,
+    {
+      ...parent,
+      props: { ...parent.props, [field]: newSiblings },
+    },
+    hasChildren,
+    getChildren
+  );
+};
+
 export const addItemRelativeToNode = (
   tree: Instance[],
   targetId: number | string,

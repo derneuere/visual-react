@@ -168,7 +168,7 @@ export const ComponentRegistryProvider: React.FC<
     setCurrentPage((prevPage) => {
       const newChild: Instance = {
         id,
-        props: { instanceId: Date.now(), ...defaultProps },
+        props: { instanceId: crypto.randomUUID(), ...defaultProps },
       };
       return addItemToParent(
         prevPage,

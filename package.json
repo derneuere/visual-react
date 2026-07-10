@@ -1,6 +1,6 @@
 {
   "name": "@derneuere/visual-react",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "A React-based visual CMS framework: headless page/component tree core with an optional Mantine-based visual editor",
   "license": "MIT",
   "type": "module",

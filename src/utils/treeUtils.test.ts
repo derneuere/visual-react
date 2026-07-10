@@ -1,10 +1,12 @@
 import { describe, it, expect } from "vitest";
 import {
-  findParent,
-  findAndReplaceNode,
   findNode,
   removeNode,
   moveInstance,
+  moveInstanceUp,
+  moveInstanceDown,
+  moveInstanceOut,
+  moveInstanceInto,
   addItemToParent,
   countNodes,
   ROOT_PARENT_ID,
@@ -36,153 +38,69 @@ const hasChildren = (instance: Instance) =>
 const getChildren = (instance: Instance): string[] | null =>
   Array.isArray(instance.props.children) ? ["children"] : null;
 
-// ---------------------------------------------------------------------------
-// Logic extracted from ComponentTree.moveInstanceOut / moveInstanceInto
-// so we can unit-test it without React.
-// ---------------------------------------------------------------------------
-
-function moveOut(
-  tree: Instance[],
-  instanceId: string | number
-): Instance[] {
-  const parentResult = findParent(tree, instanceId, hasChildren, getChildren);
-  if (!parentResult || !parentResult.node) return tree;
-
-  const { node: parent, field } = parentResult;
-  if (!field) return tree;
-
-  const siblings: Instance[] = parent.props[field] || [];
-  const instance = siblings.find((c) => c.props.instanceId === instanceId);
-  if (!instance) return tree;
-
-  const newSiblings = siblings.filter((c) => c.props.instanceId !== instanceId);
-  const updatedParent: Instance = {
-    ...parent,
-    props: { ...parent.props, [field]: newSiblings },
-  };
-
-  const grandparentResult = findParent(
-    tree,
-    parent.props.instanceId,
-    hasChildren,
-    getChildren
-  );
-
-  if (!grandparentResult || !grandparentResult.node) {
-    // Parent is root-level — insert instance right after parent
-    const parentIndex = tree.findIndex(
-      (c) => c.props.instanceId === parent.props.instanceId
-    );
-    const step1 = findAndReplaceNode(
-      tree,
-      parent.props.instanceId,
-      updatedParent,
-      hasChildren,
-      getChildren
-    );
-    const result = [...step1];
-    result.splice(parentIndex + 1, 0, instance);
-    return result;
-  } else {
-    const { node: grandparent, field: grandparentField } = grandparentResult;
-    if (!grandparentField) return tree;
-    const parentIndex = (grandparent.props[grandparentField] || []).findIndex(
-      (c: Instance) => c.props.instanceId === parent.props.instanceId
-    );
-
-    const step1 = findAndReplaceNode(
-      tree,
-      parent.props.instanceId,
-      updatedParent,
-      hasChildren,
-      getChildren
-    );
-    const updatedGrandparent = findNode(
-      step1,
-      grandparent.props.instanceId,
-      hasChildren,
-      getChildren
-    );
-    if (!updatedGrandparent) return step1;
-    const grandchildren = [
-      ...(updatedGrandparent.props[grandparentField] || []),
-    ];
-    grandchildren.splice(parentIndex + 1, 0, instance);
-    const newGrandparent: Instance = {
-      ...updatedGrandparent,
-      props: {
-        ...updatedGrandparent.props,
-        [grandparentField]: grandchildren,
-      },
-    };
-    return findAndReplaceNode(
-      step1,
-      grandparent.props.instanceId,
-      newGrandparent,
-      hasChildren,
-      getChildren
-    );
-  }
-}
-
-function moveInto(
-  tree: Instance[],
-  instanceId: string | number,
-  siblings: Instance[]
-): Instance[] {
-  const index = siblings.findIndex((c) => c.props.instanceId === instanceId);
-  if (index <= 0) return tree;
-
-  const prevSibling = siblings[index - 1];
-  if (!hasChildren(prevSibling)) return tree;
-
-  const childFields = getChildren(prevSibling);
-  if (!childFields || childFields.length === 0) return tree;
-  const targetField = childFields[0];
-
-  const instance = siblings[index];
-  const updatedPrevSibling: Instance = {
-    ...prevSibling,
-    props: {
-      ...prevSibling.props,
-      [targetField]: [...(prevSibling.props[targetField] || []), instance],
-    },
-  };
-
-  const newSiblings = siblings
-    .filter((c) => c.props.instanceId !== instanceId)
-    .map((c) =>
-      c.props.instanceId === prevSibling.props.instanceId
-        ? updatedPrevSibling
-        : c
-    );
-
-  const parentResult = findParent(tree, instanceId, hasChildren, getChildren);
-
-  if (!parentResult || !parentResult.node) {
-    return newSiblings;
-  } else {
-    const { node: parent, field } = parentResult;
-    if (!field) return tree;
-    const updatedParent: Instance = {
-      ...parent,
-      props: { ...parent.props, [field]: newSiblings },
-    };
-    return findAndReplaceNode(
-      tree,
-      parent.props.instanceId,
-      updatedParent,
-      hasChildren,
-      getChildren
-    );
-  }
-}
+const ids2 = (nodes: Instance[]) => nodes.map((n) => n.props.instanceId);
 
 // ---------------------------------------------------------------------------
-// Tests
+// moveInstanceUp / moveInstanceDown — sibling reorder helpers
 // ---------------------------------------------------------------------------
 
-describe("moveOut (move child out of parent)", () => {
+describe("moveInstanceUp / moveInstanceDown", () => {
+  it("moves a nested node up within its siblings", () => {
+    const tree = [container(1, [leaf("a"), leaf("b"), leaf("c")])];
+    const result = moveInstanceUp(tree, "b", hasChildren, getChildren);
+    expect(ids2(result![0].props.children)).toEqual(["b", "a", "c"]);
+  });
+
+  it("moves a nested node down within its siblings", () => {
+    const tree = [container(1, [leaf("a"), leaf("b"), leaf("c")])];
+    const result = moveInstanceDown(tree, "b", hasChildren, getChildren);
+    expect(ids2(result![0].props.children)).toEqual(["a", "c", "b"]);
+  });
+
+  it("moves a root-level node up / down within the top level", () => {
+    const tree = [leaf("a"), leaf("b"), leaf("c")];
+    expect(ids2(moveInstanceUp(tree, "b", hasChildren, getChildren)!)).toEqual([
+      "b",
+      "a",
+      "c",
+    ]);
+    expect(
+      ids2(moveInstanceDown(tree, "b", hasChildren, getChildren)!)
+    ).toEqual(["a", "c", "b"]);
+  });
+
+  it("returns null at the top edge (already first)", () => {
+    const tree = [container(1, [leaf("a"), leaf("b")])];
+    expect(moveInstanceUp(tree, "a", hasChildren, getChildren)).toBeNull();
+    expect(moveInstanceUp([leaf("a"), leaf("b")], "a", hasChildren, getChildren)).toBeNull();
+  });
+
+  it("returns null at the bottom edge (already last)", () => {
+    const tree = [container(1, [leaf("a"), leaf("b")])];
+    expect(moveInstanceDown(tree, "b", hasChildren, getChildren)).toBeNull();
+    expect(moveInstanceDown([leaf("a"), leaf("b")], "b", hasChildren, getChildren)).toBeNull();
+  });
+
+  it("returns null for a missing node", () => {
+    const tree = [container(1, [leaf("a")])];
+    expect(moveInstanceUp(tree, "ghost", hasChildren, getChildren)).toBeNull();
+    expect(moveInstanceDown(tree, "ghost", hasChildren, getChildren)).toBeNull();
+  });
+
+  it("does not mutate the input tree", () => {
+    const tree = [container(1, [leaf("a"), leaf("b"), leaf("c")])];
+    const snapshot = JSON.parse(JSON.stringify(tree));
+    moveInstanceUp(tree, "b", hasChildren, getChildren);
+    moveInstanceDown(tree, "b", hasChildren, getChildren);
+    expect(tree).toEqual(snapshot);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// moveInstanceOut — move child out of its parent container
+// ---------------------------------------------------------------------------
+
+describe("moveInstanceOut (move child out of parent)", () => {
   it("moves a nested child to root level, placed after its former parent", () => {
     //  tree: [Container(id=1, children=[A, B, C])]
     const a = leaf("a");
@@ -191,7 +109,7 @@ describe("moveOut (move child out of parent)", () => {
     const root = container(1, [a, b, c]);
     const tree: Instance[] = [root];
 
-    const result = moveOut(tree, "b");
+    const result = moveInstanceOut(tree, "b", hasChildren, getChildren)!;
 
     // Root now has 2 items: Container and B
     expect(result).toHaveLength(2);
@@ -211,7 +129,7 @@ describe("moveOut (move child out of parent)", () => {
     const x = leaf("x");
     const tree: Instance[] = [cont, x];
 
-    const result = moveOut(tree, "a");
+    const result = moveInstanceOut(tree, "a", hasChildren, getChildren)!;
 
     expect(result).toHaveLength(3);
     expect(result[0].props.instanceId).toBe(1); // container
@@ -226,7 +144,7 @@ describe("moveOut (move child out of parent)", () => {
     const outer = container("outer", [inner]);
     const tree: Instance[] = [outer];
 
-    const result = moveOut(tree, "a");
+    const result = moveInstanceOut(tree, "a", hasChildren, getChildren)!;
 
     // Outer container's children should now be [inner, a]
     expect(result).toHaveLength(1);
@@ -238,17 +156,32 @@ describe("moveOut (move child out of parent)", () => {
     expect(outerUpdated.props.children[0].props.children).toHaveLength(0);
   });
 
-  it("does nothing for a root-level node (no parent)", () => {
+  it("returns null for a root-level node (no parent)", () => {
     const a = leaf("a");
     const b = leaf("b");
     const tree: Instance[] = [a, b];
 
-    const result = moveOut(tree, "a");
-    expect(result).toEqual(tree);
+    expect(moveInstanceOut(tree, "a", hasChildren, getChildren)).toBeNull();
+  });
+
+  it("returns null for a missing node", () => {
+    const tree = [container(1, [leaf("a")])];
+    expect(moveInstanceOut(tree, "ghost", hasChildren, getChildren)).toBeNull();
+  });
+
+  it("does not mutate the input tree", () => {
+    const tree = [container("outer", [container("inner", [leaf("a")])])];
+    const snapshot = JSON.parse(JSON.stringify(tree));
+    moveInstanceOut(tree, "a", hasChildren, getChildren);
+    expect(tree).toEqual(snapshot);
   });
 });
 
-describe("moveInto (move node into previous sibling container)", () => {
+// ---------------------------------------------------------------------------
+// moveInstanceInto — move node into its previous sibling container
+// ---------------------------------------------------------------------------
+
+describe("moveInstanceInto (move node into previous sibling container)", () => {
   it("moves a root-level node into the previous sibling container", () => {
     // tree: [Container(id=1, children=[X]), B]
     const x = leaf("x");
@@ -256,7 +189,7 @@ describe("moveInto (move node into previous sibling container)", () => {
     const b = leaf("b");
     const tree: Instance[] = [cont, b];
 
-    const result = moveInto(tree, "b", tree);
+    const result = moveInstanceInto(tree, "b", hasChildren, getChildren)!;
 
     // Root should now just be [Container] with B as last child
     expect(result).toHaveLength(1);
@@ -274,8 +207,7 @@ describe("moveInto (move node into previous sibling container)", () => {
     const outer = container("outer", [inner, b]);
     const tree: Instance[] = [outer];
 
-    const outerChildren = outer.props.children as Instance[];
-    const result = moveInto(tree, "b", outerChildren);
+    const result = moveInstanceInto(tree, "b", hasChildren, getChildren)!;
 
     expect(result).toHaveLength(1);
     const outerUpdated = result[0];
@@ -285,21 +217,31 @@ describe("moveInto (move node into previous sibling container)", () => {
     expect(innerUpdated.props.children[1].props.instanceId).toBe("b");
   });
 
-  it("does nothing if there is no previous sibling", () => {
+  it("returns null if there is no previous sibling", () => {
     const a = leaf("a");
     const tree: Instance[] = [a];
 
-    const result = moveInto(tree, "a", tree);
-    expect(result).toEqual(tree);
+    expect(moveInstanceInto(tree, "a", hasChildren, getChildren)).toBeNull();
   });
 
-  it("does nothing if previous sibling is not a container", () => {
+  it("returns null if the previous sibling is not a container", () => {
     const a = leaf("a");
     const b = leaf("b");
     const tree: Instance[] = [a, b];
 
-    const result = moveInto(tree, "b", tree);
-    expect(result).toEqual(tree);
+    expect(moveInstanceInto(tree, "b", hasChildren, getChildren)).toBeNull();
+  });
+
+  it("returns null for a missing node", () => {
+    const tree = [container(1, [leaf("a")]), leaf("b")];
+    expect(moveInstanceInto(tree, "ghost", hasChildren, getChildren)).toBeNull();
+  });
+
+  it("does not mutate the input tree", () => {
+    const tree = [container(1, [leaf("x")]), leaf("b")];
+    const snapshot = JSON.parse(JSON.stringify(tree));
+    moveInstanceInto(tree, "b", hasChildren, getChildren);
+    expect(tree).toEqual(snapshot);
   });
 });
 

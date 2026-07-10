@@ -37,9 +37,13 @@ import { EditComponentModal } from "./components/EditComponentModal";
 
 interface EditorProps {
   onNavigate?: (href: string) => void;
+  /** Endpoint the TopBar "Export Site" button POSTs to (default "/api/export"). */
+  exportUrl?: string;
+  /** Full override for the export action; when set, exportUrl is ignored. */
+  onExport?: () => Promise<void>;
 }
 
-export function Editor({ onNavigate }: EditorProps = {}) {
+export function Editor({ onNavigate, exportUrl, onExport }: EditorProps = {}) {
   const {
     currentPage: tree,
     setCurrentPage: setTree,
@@ -51,7 +55,9 @@ export function Editor({ onNavigate }: EditorProps = {}) {
   const { setDraggedInstanceId, isPreview, setDropTarget, dropTarget, setSelectedInstanceId } =
     useEditor();
 
-  useEditorKeyboardShortcuts();
+  // Gate shortcuts while previewing so Delete/Backspace/copy/paste cannot
+  // silently mutate the page in a read-only state.
+  useEditorKeyboardShortcuts({ enabled: !isPreview });
 
   // Capture phase so it fires before SortableItem's stopPropagation
   const handleLinkCapture = React.useCallback(
@@ -198,7 +204,9 @@ export function Editor({ onNavigate }: EditorProps = {}) {
         id: componentId,
         props: {
           ...defaultProps.defaultProps,
-          instanceId: Date.now(),
+          // crypto.randomUUID() over Date.now(): fast successive adds within
+          // the same millisecond must not collide.
+          instanceId: crypto.randomUUID(),
         },
       };
 
@@ -208,10 +216,10 @@ export function Editor({ onNavigate }: EditorProps = {}) {
 
       const overFieldName = over.data.current?.fieldName;
 
-      // If dropping onto a container, add into it
+      // If dropping onto a container, add into it (addItemToParent derives
+      // the child field itself, so no field guard here — one used to
+      // spuriously abort adds into empty containers).
       if (hasChildren(overNode) && (dropPosition === "into" || overFieldName)) {
-        const field = overFieldName || getChildren(overNode)?.[0];
-        if (!field) return;
         setTree((prev) =>
           addItemToParent(prev, overNode.props.instanceId, newItem, hasChildren, getChildren)
         );
@@ -255,7 +263,7 @@ export function Editor({ onNavigate }: EditorProps = {}) {
         className="vr-editor"
         style={{ height: "100vh", display: "flex", flexDirection: "column" }}
       >
-        <TopBar />
+        <TopBar exportUrl={exportUrl} onExport={onExport} />
         <div style={{ display: "flex", flexGrow: 1, minHeight: 0 }}>
           <LeftSidebar onNavigate={onNavigate} />
           <div style={{ flexGrow: 1, overflowY: "auto" }} onClickCapture={handleLinkCapture}>
@@ -285,7 +293,7 @@ export function Editor({ onNavigate }: EditorProps = {}) {
           flexDirection: "column",
         }}
       >
-        <TopBar />
+        <TopBar exportUrl={exportUrl} onExport={onExport} />
         <div style={{ display: "flex", flexGrow: 1, minHeight: 0 }}>
           <LeftSidebar onNavigate={onNavigate} />
           <div

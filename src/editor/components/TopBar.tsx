@@ -7,7 +7,17 @@ import { IconSend, IconFileExport, IconDeviceFloppy } from "@tabler/icons-react"
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { PageData, PageMeta } from "../../storage/types";
 
-const TopBar = () => {
+export interface TopBarProps {
+  /** Endpoint the "Export Site" button POSTs to. Default: "/api/export". */
+  exportUrl?: string;
+  /**
+   * Full override for the export action. When set, it replaces the built-in
+   * fetch-and-download behavior entirely (exportUrl is ignored).
+   */
+  onExport?: () => Promise<void>;
+}
+
+const TopBar = ({ exportUrl = "/api/export", onExport }: TopBarProps = {}) => {
   const { isCurrentPageChanged, pagePath, currentPage, pageMeta, setPageMeta } =
     useComponentRegistry();
   const storage = useStorageAdapter();
@@ -65,7 +75,11 @@ const TopBar = () => {
 
   const exportSite = useMutation({
     mutationFn: async () => {
-      const response = await fetch("/api/export", { method: "POST" });
+      if (onExport) {
+        await onExport();
+        return;
+      }
+      const response = await fetch(exportUrl, { method: "POST" });
       if (!response.ok) throw new Error("Export failed");
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);

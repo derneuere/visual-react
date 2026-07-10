@@ -93,7 +93,7 @@ export const ComponentExplorerModal: React.FC = () => {
       id: id,
       props: {
         ...defaultProps?.defaultProps,
-        instanceId: Date.now(),
+        instanceId: crypto.randomUUID(),
       },
     };
 

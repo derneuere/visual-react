@@ -10,8 +10,12 @@ import {
 } from "@tabler/icons-react";
 import { useEditor } from "../hooks";
 import { useComponentRegistry } from "../../registry/hooks";
-import { findParent, findAndReplaceNode, findNode } from "../../utils/treeUtils";
-import { arrayMove } from "@dnd-kit/sortable";
+import {
+  moveInstanceUp,
+  moveInstanceDown,
+  moveInstanceOut,
+  moveInstanceInto,
+} from "../../utils/treeUtils";
 import type { Instance } from "../../registry/types";
 
 // Collect all container instanceIds from the tree for initial expansion
@@ -75,220 +79,39 @@ function ComponentTree() {
     []
   );
 
-  const moveInstance = useCallback(
+  // All tree surgery lives in the shared treeUtils helpers (single
+  // implementation across the package). A null result means no-op (edge of
+  // the sibling list, no parent, no container sibling) — keep the tree.
+  const handleMove = useCallback(
     (instanceId: string | number, direction: "up" | "down") => {
-      const parentResult = findParent(
-        currentPage,
-        instanceId,
-        hasChildren,
-        getChildren
+      const move = direction === "up" ? moveInstanceUp : moveInstanceDown;
+      setCurrentPage(
+        (prev) => move(prev, instanceId, hasChildren, getChildren) ?? prev
       );
-
-      if (!parentResult) {
-        // Root-level instance
-        const index = currentPage.findIndex(
-          (c) => c.props.instanceId === instanceId
-        );
-        if (index < 0) return;
-        const targetIndex = direction === "up" ? index - 1 : index + 1;
-        if (targetIndex < 0 || targetIndex >= currentPage.length) return;
-        setCurrentPage((prev) => arrayMove([...prev], index, targetIndex));
-      } else {
-        const { node: parent, field } = parentResult;
-        if (!parent || !field) return;
-        const siblings: Instance[] = parent.props[field];
-        if (!Array.isArray(siblings)) return;
-        const index = siblings.findIndex(
-          (c) => c.props.instanceId === instanceId
-        );
-        if (index < 0) return;
-        const targetIndex = direction === "up" ? index - 1 : index + 1;
-        if (targetIndex < 0 || targetIndex >= siblings.length) return;
-
-        const newSiblings = arrayMove([...siblings], index, targetIndex);
-        const updatedParent: Instance = {
-          ...parent,
-          props: { ...parent.props, [field]: newSiblings },
-        };
-        setCurrentPage((prev) =>
-          findAndReplaceNode(
-            prev,
-            parent.props.instanceId,
-            updatedParent,
-            hasChildren,
-            getChildren
-          )
-        );
-      }
     },
-    [currentPage, setCurrentPage, hasChildren, getChildren]
+    [setCurrentPage, hasChildren, getChildren]
   );
 
   // Move a node out of its parent container: remove from parent, insert after parent
-  const moveInstanceOut = useCallback(
+  const handleMoveOut = useCallback(
     (instanceId: string | number) => {
-      const parentResult = findParent(
-        currentPage,
-        instanceId,
-        hasChildren,
-        getChildren
+      setCurrentPage(
+        (prev) =>
+          moveInstanceOut(prev, instanceId, hasChildren, getChildren) ?? prev
       );
-      if (!parentResult || !parentResult.node) return; // Already at root
-
-      const { node: parent, field } = parentResult;
-      if (!field) return;
-
-      const siblings: Instance[] = parent.props[field] || [];
-      const instance = siblings.find(
-        (c) => c.props.instanceId === instanceId
-      );
-      if (!instance) return;
-
-      const newSiblings = siblings.filter(
-        (c) => c.props.instanceId !== instanceId
-      );
-      const updatedParent: Instance = {
-        ...parent,
-        props: { ...parent.props, [field]: newSiblings },
-      };
-
-      const grandparentResult = findParent(
-        currentPage,
-        parent.props.instanceId,
-        hasChildren,
-        getChildren
-      );
-
-      if (!grandparentResult || !grandparentResult.node) {
-        // Parent is at root level — insert instance right after parent
-        const parentIndex = currentPage.findIndex(
-          (c) => c.props.instanceId === parent.props.instanceId
-        );
-        setCurrentPage((prev) => {
-          const step1 = findAndReplaceNode(
-            prev,
-            parent.props.instanceId,
-            updatedParent,
-            hasChildren,
-            getChildren
-          );
-          const result = [...step1];
-          result.splice(parentIndex + 1, 0, instance);
-          return result;
-        });
-      } else {
-        const { node: grandparent, field: grandparentField } =
-          grandparentResult;
-        if (!grandparentField) return;
-        const parentIndex = (
-          grandparent.props[grandparentField] || []
-        ).findIndex(
-          (c: Instance) => c.props.instanceId === parent.props.instanceId
-        );
-
-        setCurrentPage((prev) => {
-          const step1 = findAndReplaceNode(
-            prev,
-            parent.props.instanceId,
-            updatedParent,
-            hasChildren,
-            getChildren
-          );
-          const updatedGrandparent = findNode(
-            step1,
-            grandparent.props.instanceId,
-            hasChildren,
-            getChildren
-          );
-          if (!updatedGrandparent) return step1;
-          const grandchildren = [
-            ...(updatedGrandparent.props[grandparentField] || []),
-          ];
-          grandchildren.splice(parentIndex + 1, 0, instance);
-          const newGrandparent: Instance = {
-            ...updatedGrandparent,
-            props: {
-              ...updatedGrandparent.props,
-              [grandparentField]: grandchildren,
-            },
-          };
-          return findAndReplaceNode(
-            step1,
-            grandparent.props.instanceId,
-            newGrandparent,
-            hasChildren,
-            getChildren
-          );
-        });
-      }
     },
-    [currentPage, setCurrentPage, hasChildren, getChildren]
+    [setCurrentPage, hasChildren, getChildren]
   );
 
   // Move a node into the previous sibling container (as its last child)
-  const moveInstanceInto = useCallback(
-    (instanceId: string | number, siblings: Instance[]) => {
-      const index = siblings.findIndex(
-        (c) => c.props.instanceId === instanceId
+  const handleMoveInto = useCallback(
+    (instanceId: string | number) => {
+      setCurrentPage(
+        (prev) =>
+          moveInstanceInto(prev, instanceId, hasChildren, getChildren) ?? prev
       );
-      if (index <= 0) return;
-
-      const prevSibling = siblings[index - 1];
-      if (!hasChildren(prevSibling)) return;
-
-      const childFields = getChildren(prevSibling);
-      if (!childFields || childFields.length === 0) return;
-      const targetField = childFields[0];
-
-      const instance = siblings[index];
-      const updatedPrevSibling: Instance = {
-        ...prevSibling,
-        props: {
-          ...prevSibling.props,
-          [targetField]: [
-            ...(prevSibling.props[targetField] || []),
-            instance,
-          ],
-        },
-      };
-
-      const newSiblings = siblings
-        .filter((c) => c.props.instanceId !== instanceId)
-        .map((c) =>
-          c.props.instanceId === prevSibling.props.instanceId
-            ? updatedPrevSibling
-            : c
-        );
-
-      const parentResult = findParent(
-        currentPage,
-        instanceId,
-        hasChildren,
-        getChildren
-      );
-
-      if (!parentResult || !parentResult.node) {
-        // Root level
-        setCurrentPage(newSiblings);
-      } else {
-        const { node: parent, field } = parentResult;
-        if (!field) return;
-        const updatedParent: Instance = {
-          ...parent,
-          props: { ...parent.props, [field]: newSiblings },
-        };
-        setCurrentPage((prev) =>
-          findAndReplaceNode(
-            prev,
-            parent.props.instanceId,
-            updatedParent,
-            hasChildren,
-            getChildren
-          )
-        );
-      }
     },
-    [currentPage, setCurrentPage, hasChildren, getChildren]
+    [setCurrentPage, hasChildren, getChildren]
   );
 
   const renderNode = (
@@ -389,7 +212,7 @@ function ComponentTree() {
                 disabled={!canMoveOut}
                 onClick={(e) => {
                   e.stopPropagation();
-                  moveInstanceOut(instance.props.instanceId);
+                  handleMoveOut(instance.props.instanceId);
                 }}
               >
                 <IconArrowNarrowLeft size={11} />
@@ -403,7 +226,7 @@ function ComponentTree() {
                 disabled={index === 0}
                 onClick={(e) => {
                   e.stopPropagation();
-                  moveInstance(instance.props.instanceId, "up");
+                  handleMove(instance.props.instanceId, "up");
                 }}
               >
                 <IconArrowUp size={11} />
@@ -417,7 +240,7 @@ function ComponentTree() {
                 disabled={index === siblingCount - 1}
                 onClick={(e) => {
                   e.stopPropagation();
-                  moveInstance(instance.props.instanceId, "down");
+                  handleMove(instance.props.instanceId, "down");
                 }}
               >
                 <IconArrowDown size={11} />
@@ -431,7 +254,7 @@ function ComponentTree() {
                 disabled={!canMoveInto}
                 onClick={(e) => {
                   e.stopPropagation();
-                  moveInstanceInto(instance.props.instanceId, siblings);
+                  handleMoveInto(instance.props.instanceId);
                 }}
               >
                 <IconArrowNarrowRight size={11} />
