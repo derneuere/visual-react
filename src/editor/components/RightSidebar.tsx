@@ -1,61 +1,47 @@
-import { useState } from "react";
-import EditingTab from "./EditingTab";
-import {ComponentExplorer} from "./ComponentExplorer";
-import TreeFileHandler from "./TreeFileHandler";
+// RightSidebar — selection breadcrumb + property panel for the selected
+// instance (0.4.0). Shows the page-settings panel (TreeFileHandler) when
+// Navigation opened it, and an empty-state hint when nothing is selected.
+import { Stack, Text } from "@mantine/core";
+import { IconClick } from "@tabler/icons-react";
 import { useEditor } from "../hooks";
-import { Stack, Button, Card, Text } from "@mantine/core";
-import { IconCategoryPlus, IconArrowsMaximize } from "@tabler/icons-react";
 import { Breadcrumb } from "./Breadcrumb";
+import PropertyPanel from "./PropertyPanel";
+import TreeFileHandler from "./TreeFileHandler";
+import { useEditorLabels } from "../labels";
 
 const RightSidebar = () => {
-  const { selectedInstanceId, setSelectedInstanceId, editModalOpen, setEditModalOpen, pageSettingsOpen, setPageSettingsOpen } = useEditor();
-
-  const [showComponents, setShowComponents] = useState(false);
+  const { selectedInstanceId, pageSettingsOpen } = useEditor();
+  const labels = useEditorLabels();
 
   return (
-    <div className="vr-chrome" style={{ width: "320px", overflowY: "auto", height: "100%", borderLeft: "1px solid #e2e8f0" }}>
+    <div
+      className="vr-chrome"
+      style={{
+        width: "320px",
+        overflowY: "auto",
+        height: "100%",
+        borderLeft: "1px solid #e2e8f0",
+        flexShrink: 0,
+      }}
+    >
       <Stack gap="xs" p="xs">
-        <Card shadow="sm" padding="sm" withBorder>
-          <Button
-            leftSection={<IconCategoryPlus size={14} />}
-            variant="default"
-            size="sm"
-            fullWidth
-            onClick={() => {
-              setShowComponents(true);
-              setSelectedInstanceId(null);
-              setPageSettingsOpen(false);
-            }}
-          >
-            Add Component
-          </Button>
-        </Card>
-        {selectedInstanceId && !editModalOpen && (
+        {selectedInstanceId != null ? (
           <>
             <Breadcrumb />
-            <EditingTab />
+            <PropertyPanel />
           </>
-        )}
-        {selectedInstanceId && editModalOpen && (
-          <Card shadow="sm" padding="md" withBorder>
-            <Stack gap="sm" align="center">
-              <Text size="sm" c="dimmed" ta="center">
-                Editing in expanded view
-              </Text>
-              <Button
-                variant="light"
-                size="xs"
-                leftSection={<IconArrowsMaximize size={14} />}
-                onClick={() => setEditModalOpen(false)}
-              >
-                Back to sidebar
-              </Button>
-            </Stack>
-          </Card>
-        )}
-        {!selectedInstanceId && pageSettingsOpen && <TreeFileHandler />}
-        {!selectedInstanceId && !pageSettingsOpen && showComponents && (
-          <ComponentExplorer />
+        ) : pageSettingsOpen ? (
+          <TreeFileHandler />
+        ) : (
+          <Stack align="center" gap={6} py="xl" px="md">
+            <IconClick size={28} style={{ color: "#adb5bd" }} />
+            <Text size="sm" fw={500} c="dimmed" ta="center">
+              {labels.noSelection}
+            </Text>
+            <Text size="xs" c="dimmed" ta="center">
+              {labels.noSelectionHint}
+            </Text>
+          </Stack>
         )}
       </Stack>
     </div>

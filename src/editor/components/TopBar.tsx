@@ -1,6 +1,17 @@
-import { Switch, Group, Button, ActionIcon, Tooltip } from "@mantine/core";
+// TopBar — the editor's top action bar (0.4.0).
+//
+// Left to right: undo/redo, the view-mode switch (Edit | Desktop | Mobile —
+// device-true previews on the same canvas iframe), Save Draft / Publish /
+// Export. The old in-document "Previewing" switch is gone: previewing is now
+// a canvas view mode.
+import {
+  Group,
+  Button,
+  ActionIcon,
+  Tooltip,
+  SegmentedControl,
+} from "@mantine/core";
 
-import { useEditor } from "../hooks";
 import { useComponentRegistry } from "../../registry/hooks";
 import { useEditorHistory } from "../../headless/useEditorHistory";
 import { useStorageAdapter } from "../../storage/hooks";
@@ -10,11 +21,19 @@ import {
   IconDeviceFloppy,
   IconArrowBackUp,
   IconArrowForwardUp,
+  IconPencil,
+  IconDeviceDesktop,
+  IconDeviceMobile,
 } from "@tabler/icons-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { PageData, PageMeta } from "../../storage/types";
+import type { EditorViewMode } from "../types";
+import { useEditorLabels } from "../labels";
 
 export interface TopBarProps {
+  /** Current canvas view mode (owned by the Editor). */
+  viewMode: EditorViewMode;
+  onViewModeChange: (mode: EditorViewMode) => void;
   /** Endpoint the "Export Site" button POSTs to. Default: "/api/export". */
   exportUrl?: string;
   /**
@@ -24,11 +43,17 @@ export interface TopBarProps {
   onExport?: () => Promise<void>;
 }
 
-const TopBar = ({ exportUrl = "/api/export", onExport }: TopBarProps = {}) => {
+const TopBar = ({
+  viewMode,
+  onViewModeChange,
+  exportUrl = "/api/export",
+  onExport,
+}: TopBarProps) => {
   const { isCurrentPageChanged, pagePath, currentPage, pageMeta, setPageMeta } =
     useComponentRegistry();
   const storage = useStorageAdapter();
   const queryClient = useQueryClient();
+  const labels = useEditorLabels();
 
   const buildPageData = (status: PageMeta["status"]): PageData => {
     const now = new Date().toISOString();
@@ -78,8 +103,8 @@ const TopBar = ({ exportUrl = "/api/export", onExport }: TopBarProps = {}) => {
     },
   });
 
-  const { isPreview, setIsPreview } = useEditor();
   const { undo, redo, canUndo, canRedo } = useEditorHistory();
+  const editing = viewMode === "edit";
 
   const exportSite = useMutation({
     mutationFn: async () => {
@@ -104,37 +129,70 @@ const TopBar = ({ exportUrl = "/api/export", onExport }: TopBarProps = {}) => {
 
   return (
     <Group justify="center" className="vr-chrome" style={{ padding: 10 }}>
-      <Switch
-        checked={isPreview}
-        onChange={(event) => setIsPreview(event.currentTarget.checked)}
-        label={isPreview ? "Previewing" : "Not Previewing"}
-        color="teal"
-      />
-      {/* Undo/redo — disabled in preview (read-only, like the keyboard shortcuts) */}
+      {/* Undo/redo — disabled in preview modes (read-only, like the
+          keyboard shortcuts) */}
       <Group gap={4}>
-        <Tooltip label="Undo (Ctrl+Z)">
+        <Tooltip label={labels.undo}>
           <ActionIcon
             variant="default"
             size="lg"
             aria-label="Undo"
             onClick={undo}
-            disabled={!canUndo || isPreview}
+            disabled={!canUndo || !editing}
           >
             <IconArrowBackUp size={16} />
           </ActionIcon>
         </Tooltip>
-        <Tooltip label="Redo (Ctrl+Shift+Z)">
+        <Tooltip label={labels.redo}>
           <ActionIcon
             variant="default"
             size="lg"
             aria-label="Redo"
             onClick={redo}
-            disabled={!canRedo || isPreview}
+            disabled={!canRedo || !editing}
           >
             <IconArrowForwardUp size={16} />
           </ActionIcon>
         </Tooltip>
       </Group>
+
+      {/* View mode: structural editing vs device-true preview on ONE
+          never-remounting canvas iframe. */}
+      <SegmentedControl
+        size="xs"
+        value={viewMode}
+        onChange={(value) => onViewModeChange(value as EditorViewMode)}
+        data={[
+          {
+            value: "edit",
+            label: (
+              <Group gap={6} wrap="nowrap" data-testid="viewmode-edit">
+                <IconPencil size={14} />
+                <span>{labels.editMode}</span>
+              </Group>
+            ),
+          },
+          {
+            value: "desktop",
+            label: (
+              <Group gap={6} wrap="nowrap" data-testid="viewmode-desktop">
+                <IconDeviceDesktop size={14} />
+                <span>{labels.desktopPreview}</span>
+              </Group>
+            ),
+          },
+          {
+            value: "mobile",
+            label: (
+              <Group gap={6} wrap="nowrap" data-testid="viewmode-mobile">
+                <IconDeviceMobile size={14} />
+                <span>{labels.mobilePreview}</span>
+              </Group>
+            ),
+          },
+        ]}
+      />
+
       <Button
         leftSection={<IconDeviceFloppy size={14} />}
         variant="default"
@@ -142,7 +200,7 @@ const TopBar = ({ exportUrl = "/api/export", onExport }: TopBarProps = {}) => {
         loading={saveDraftMutation.isPending}
         disabled={!isCurrentPageChanged}
       >
-        Save Draft
+        {labels.saveDraft}
       </Button>
       <Button
         leftSection={<IconSend size={14} />}
@@ -151,7 +209,7 @@ const TopBar = ({ exportUrl = "/api/export", onExport }: TopBarProps = {}) => {
         loading={publishMutation.isPending}
         disabled={!isCurrentPageChanged}
       >
-        Publish
+        {labels.publish}
       </Button>
       <Button
         leftSection={<IconFileExport size={14} />}
@@ -159,7 +217,7 @@ const TopBar = ({ exportUrl = "/api/export", onExport }: TopBarProps = {}) => {
         onClick={() => exportSite.mutate()}
         loading={exportSite.isPending}
       >
-        Export Site
+        {labels.exportSite}
       </Button>
     </Group>
   );

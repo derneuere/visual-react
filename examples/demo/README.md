@@ -4,14 +4,14 @@ A full example app for the `@derneuere/visual-react` package: a [TanStack Start]
 
 The demo consumes the package from the repo root via `"@derneuere/visual-react": "file:../.."`, so build the package first.
 
-Two editing surfaces are included:
+Editing (0.4.0, canvas-only):
 
-- `/editor` — the classic in-document editor (`Editor` from the `/editor` entry)
-- `/canvas-editor` — the iframe-canvas editor built on
-  `@derneuere/visual-react/canvas` (+ `/canvas/dnd` for palette drags onto the
-  canvas), with the bare canvas route at `/canvas-frame`. Architecture and
-  wiring: [`../../docs/canvas.md`](../../docs/canvas.md). Edits on this route
-  are in-memory (no save button).
+- `/editor` — the bundled editor (`Editor` from the `/editor` entry). It
+  edits the page through an iframe canvas: the bare canvas route lives at
+  `/canvas-frame` (mounts `CanvasBridge` and renders pushed content through
+  the same static renderer as the public pages) and is passed to the editor
+  as `canvasSrc="/canvas-frame"`. Architecture and wiring:
+  [`../../docs/canvas.md`](../../docs/canvas.md).
 
 ## Run
 

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { promises as fs } from "fs";
-import { LOCAL_ASSETS_DIR } from "../../../utils/pagesUtils";
+import { LOCAL_ASSETS_DIR } from "../../../../utils/pagesUtils";
 import {
   GitHubStorageAdapter,
   type StorageAdapter,
@@ -24,7 +24,7 @@ function createJsonResponse(data, status = 200) {
   });
 }
 
-export const Route = createFileRoute("/api/assets")({
+export const Route = createFileRoute("/api/assets/")({
   server: {
     handlers: {
       GET: async () => {

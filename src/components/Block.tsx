@@ -1,133 +1,31 @@
-import React from "react";
-import { UniqueIdentifier, useDroppable } from "@dnd-kit/core";
+// Block — the container-children render slot used inside container widgets
+// (Sections, columns, ...): `<Block parentId={instanceId} items={children} />`.
+//
+// Since 0.4.0 this is a pure static renderer everywhere: the public pages,
+// static exports AND the editor canvas iframe all render the same markup
+// (the iframe's editing affordances are drawn by CanvasBridge's overlay, not
+// by the page markup). The old dnd droppable behavior of the in-document
+// editing mode was removed; `parentId` and `itemsField` are kept in the
+// props so existing widget code keeps compiling (and to leave room for
+// future canvas metadata).
 import { ComponentRenderer } from "./ComponentRenderer";
-
-import { useComponentRegistry } from "../registry";
 import { Instance } from "../registry/types";
-import { findNode } from "../utils";
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { useEditor } from "../editor/hooks";
-import { useStaticMode } from "../static/hooks";
 
 interface BlockProps {
   items: Instance[];
-  parentId: string;
+  /** The container instance's own instanceId (unused since 0.4.0). */
+  parentId?: string | number;
+  /** The child field this block renders (unused since 0.4.0). */
   itemsField?: string;
   style?: any;
 }
 
-const StaticBlock = ({ items, style }: BlockProps) => {
+export const Block = ({ items, style }: BlockProps) => {
   return (
     <div style={{ minHeight: 50, ...style }}>
-      <ComponentRenderer items={items} notEditable />
+      <ComponentRenderer items={items} />
     </div>
   );
-};
-
-const DndBlock = ({
-  items,
-  parentId,
-  itemsField,
-  style,
-}: BlockProps) => {
-  const droppableId = itemsField ? parentId + itemsField : parentId;
-  const fieldName = itemsField ? itemsField : "children";
-
-  const { setNodeRef, isOver } = useDroppable({
-    id: droppableId,
-    data: {
-      instanceId: parentId,
-      fieldName,
-    },
-  });
-
-  const { currentPage, hasChildren, getChildren } = useComponentRegistry();
-
-  const { draggedInstanceId, isPreview, dropTarget, setDropTarget } =
-    useEditor();
-
-  const isDragDisabled =
-    draggedInstanceId === parentId ||
-    !!findNode(
-      findNode(currentPage, draggedInstanceId, hasChildren, getChildren)?.props
-        .children ?? [],
-      parentId,
-      hasChildren,
-      getChildren
-    );
-
-  // Update drop target state when hovering over this container's droppable zone.
-  // Only set "into" if updateDropTargetIndicator hasn't already targeted this element
-  // (e.g. with above/below for section reordering). This prevents the Block from
-  // overriding the above/below position that enables section reordering.
-  React.useEffect(() => {
-    if (isOver && draggedInstanceId) {
-      // Only set "into" if this element isn't already targeted by drag indicator
-      if (dropTarget?.id !== parentId || dropTarget?.fieldName !== fieldName) {
-        setDropTarget({
-          id: parentId,
-          fieldName,
-          position: "into",
-        });
-      }
-    } else if (
-      !isOver &&
-      dropTarget?.id === parentId &&
-      dropTarget?.fieldName === fieldName
-    ) {
-      setDropTarget(null);
-    }
-  }, [
-    isOver,
-    draggedInstanceId,
-    parentId,
-    fieldName,
-    setDropTarget,
-    dropTarget,
-  ]);
-
-  // Check if this dropzone is the current drop target
-  const isDropTarget =
-    dropTarget?.id === parentId && dropTarget?.fieldName === fieldName;
-
-  // Check if this container is the current drop target with 'into' position
-  const isIntoTarget = isDropTarget && dropTarget?.position === "into";
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={{
-        outline: "none",
-        backgroundColor: isIntoTarget
-          ? "rgba(34, 197, 94, 0.05)"
-          : "transparent",
-        minHeight: 50,
-        ...style,
-      }}
-    >
-      <SortableContext
-        id={parentId.toString()}
-        items={items.map(
-          (item: Instance) => item.props.instanceId as UniqueIdentifier
-        )}
-        strategy={verticalListSortingStrategy}
-      >
-        <ComponentRenderer
-          items={items}
-          notEditable={isPreview || isDragDisabled}
-        />
-      </SortableContext>
-    </div>
-  );
-};
-
-export const Block = (props: BlockProps) => {
-  const isStatic = useStaticMode();
-  if (isStatic) return <StaticBlock {...props} />;
-  return <DndBlock {...props} />;
 };
 
 export default Block;

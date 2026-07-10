@@ -3,6 +3,139 @@
 All notable changes to `@derneuere/visual-react` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 0.4.0
+
+**BREAKING.** The bundled editor is now canvas-only: pages are edited through
+an iframe canvas (`@derneuere/visual-react/canvas`), never by rendering
+editing chrome into the page markup itself. The in-document editing mode
+(`SortableItem` & friends) was removed. Static rendering is untouched —
+`ComponentRenderer` / `Block` / `CurrentPage` render the exact same public
+markup as before (they now *always* render it, in every mode).
+
+### Changed (breaking)
+
+- **`Editor` requires a canvas route.** Pass `canvasSrc="/your-canvas-route"`
+  (or `canvas={{ src, globalKey?, connectTimeoutMs?, pageData?, ... }}`); the
+  editor throws with a pointer to the migration notes when it is missing.
+  The route mounts `CanvasBridge` and renders pushed content through your
+  renderer — see MIGRATION below. The editor wires everything else itself:
+  click-to-select and Delete/Backspace/Escape forwarding, bridge-native move
+  drags, dnd-kit palette/tree drags onto the canvas (`useEditorDnd` +
+  `useCanvasDnd`), undo/redo, and an **Edit | Desktop | Mobile** view-mode
+  switch (device-true previews via `CANVAS_DEVICE_PRESETS` + scale-to-fit on
+  ONE never-remounting iframe; editing input, selection and keyboard
+  shortcuts are disabled in the preview modes, and the sidebars hide).
+- **`TopBar` props changed:** it now requires `viewMode` /
+  `onViewModeChange` (the segmented Edit | Desktop | Mobile switch) instead
+  of rendering the removed "Previewing" switch; `exportUrl` / `onExport`
+  are unchanged.
+- **`LeftSidebar`** now hosts Build (component palette + layer tree) and
+  Pages (the unchanged page-management Navigation) tabs. **`RightSidebar`**
+  is breadcrumb + `PropertyPanel` (+ the page-settings panel), with an
+  empty-state hint; the "Add Component" button moved into the layer tree
+  ("+ Add" opens the searchable picker; also in the tree's context menu).
+- **`ComponentRenderer`** renders no editing chrome anymore: no
+  `SortableItem` wrappers, no `useEditor()` dependency. Its `notEditable`
+  prop is now a deprecated no-op (kept so call sites compile). Public markup
+  is unchanged compared to the pre-0.4.0 *static* render path.
+- **`Block`** is a pure static child-list renderer in every mode (`<div>`
+  + `ComponentRenderer`, same markup as the old static branch). Its
+  `parentId` / `itemsField` props are now optional and unused. Container
+  widgets built on `Block` need no code change.
+- **`editor.css`** no longer ships the `.control-panel` rules (that chrome
+  is gone).
+
+### Removed (breaking) — with replacements
+
+| Removed export (`/editor` entry) | Replacement |
+| --- | --- |
+| `SortableItem`, `SortableItemProps` | none — in-document editing chrome is gone; selection/hover/drop visuals are drawn by the canvas bridge overlay inside the iframe |
+| `EditingTab` | `PropertyPanel` (built on the headless `useInstanceFields`; keeps RichTextEditor for `text`, AssetExplorer for `image`, propertyGroups tabs, editing extensions, objectlist cards, validation alerts) |
+| `EditComponentModal` | none — the property panel lives in the right sidebar; the expand-to-modal flow was dropped |
+| `ComponentExplorer` | `ComponentPalette` (draggable palette on `usePaletteDraggable`, grouped by `metadata.category`) |
+| `ComponentExplorerModal` | `ComponentPickerModal` (controlled `{ opened, onClose, onPick, targetInstanceId? }` searchable picker; keeps the `only`/`onlyInside` restriction filtering) |
+
+Also gone (behavior, not exports): the in-document add-above/add-below "+"
+buttons (insert via the layer tree's context menu or "+ Add"), the
+per-widget copy/paste/duplicate hover buttons (keyboard shortcuts
+Ctrl/Cmd+C/V/D still work on the selection, and the tree offers duplicate),
+and the editor-context fields `isModalOpen` / `isAbove` / `editModalOpen`
+are no longer used by the bundled editor (they remain in the context for
+compatibility).
+
+### Added
+
+- **`labels` prop on `Editor`** — a shallow string map (English defaults)
+  for localizing the editor chrome: `<Editor canvasSrc="…" labels={{
+  publish: "Veröffentlichen" }} />`. Exported: `EditorLabels`,
+  `defaultEditorLabels`, `useEditorLabels`, `EditorLabelsProvider`.
+  Coverage: the new 0.4.0 chrome (TopBar, sidebars, palette, layer tree +
+  context menu, picker modal, property panel, canvas title); the legacy
+  page-management components (Navigation, CreatePageModal, TreeFileHandler,
+  SaveAsTemplateModal, DeletePageConfirmModal) keep hardcoded English for
+  now.
+- **`ComponentTree`** gained dnd drop-target rows (`useTreeDroppable`, same
+  `{ instanceId, fieldName }` contract as the canvas proxies, with
+  above/below/into indicators), a right-click context menu (insert /
+  duplicate / delete), duplicate + delete row actions next to the existing
+  move up/down/out/into buttons, and a "+ Add" header button that appends
+  via the picker.
+- **New building-block exports** (`/editor` entry): `PropertyPanel`,
+  `ComponentPalette`, `ComponentPickerModal`, `EditorCanvas` (the fully
+  wired CanvasHost column), `EditorCanvasOptions`, `EditorViewMode`,
+  `EditorProps`, `TopBarProps`.
+- The canvas bridge's built-in empty-page hint (`emptyHint` on
+  `CanvasBridge`) is what the editor shows on an empty canvas — set it on
+  your canvas route to customize.
+
+### MIGRATION (from the in-document editor)
+
+1. **Create a canvas route** in your app (a bare page, same origin):
+
+   ```tsx
+   import { useComponentRegistry, StaticModeProvider } from "@derneuere/visual-react";
+   import { CanvasBridge } from "@derneuere/visual-react/canvas";
+   import { ComponentRenderer } from "@derneuere/visual-react/editor";
+
+   export function CanvasFrame() {
+     const { hasChildren, getComponentProps } = useComponentRegistry();
+     return (
+       <CanvasBridge
+         isContainer={hasChildren}
+         getInstanceLabel={(i) => getComponentProps(i.id)?.name ?? i.id}
+         renderPage={({ content }) => (
+           <StaticModeProvider>
+             <main>
+               <ComponentRenderer items={content} />
+             </main>
+           </StaticModeProvider>
+         )}
+       />
+     );
+   }
+   ```
+
+   The route must sit inside the same provider stack as the editor
+   (registry + storage + component loading) so the pushed content renders
+   with your registered components.
+
+2. **Pass it to the editor:** `<Editor canvasSrc="/canvas-frame" />`. Keep
+   `onNavigate` / `exportUrl` / `onExport` as before.
+
+3. **Custom chrome** built from the old exports: swap per the table above
+   (`EditingTab` → `PropertyPanel`, `ComponentExplorer*` →
+   `ComponentPalette` / `ComponentPickerModal`); anything rendering
+   `SortableItem` must move to the canvas (see
+   [docs/canvas.md](docs/canvas.md), "Migration notes").
+
+4. **Public pages / static exports need no changes** — `ComponentRenderer`,
+   `Block`, `CurrentPage` and `wrapInstance` render as before.
+   `StaticModeProvider` is now a no-op for these components but is still
+   exported and harmless.
+
+Reference migrations: `examples/demo` (this repo — `/editor` +
+`/canvas-frame`) and the berlin-radar app.
+
 ## 0.3.0
 
 The headless editor controller layer: everything a custom editor UI needs —

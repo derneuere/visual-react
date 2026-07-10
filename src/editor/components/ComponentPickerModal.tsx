@@ -1,63 +1,93 @@
-import React, { useState, useMemo } from "react";
-import { Modal, Button, Text, Stack, TextInput } from "@mantine/core";
-import { addItemRelativeToNode, findParent } from "../../utils/treeUtils";
-
+// ComponentPickerModal — searchable, category-grouped component picker
+// (0.4.0). Replaces the old ComponentExplorerModal: instead of reading the
+// SortableItem "+ above/below" state from the editor context, it is a
+// controlled, target-agnostic picker — the caller decides where the chosen
+// component is inserted via `onPick(widgetKey)`.
+//
+// When `targetInstanceId` is provided the list is narrowed by the target
+// container's field restrictions (`only`) and each component's `onlyInside`
+// metadata, mirroring the old modal's behavior for context-menu inserts.
+import { useMemo, useState } from "react";
+import { Modal, Text, Stack, TextInput } from "@mantine/core";
+import { IconSearch } from "@tabler/icons-react";
 import { useComponentRegistry } from "../../registry/hooks";
-import { useEditor } from "../hooks";
+import { findNode, findParent } from "../../utils/treeUtils";
+import { useEditorLabels } from "../labels";
 
-export const ComponentExplorerModal: React.FC = () => {
+export interface ComponentPickerModalProps {
+  opened: boolean;
+  onClose: () => void;
+  /** The chosen component id; the caller inserts it and closes the modal. */
+  onPick: (widgetKey: string) => void;
+  /**
+   * Node the insert is relative to (context-menu "insert"): restriction
+   * filtering resolves against its parent container. null/undefined = append
+   * to the page root, no restriction filtering.
+   */
+  targetInstanceId?: number | string | null;
+}
+
+export function ComponentPickerModal({
+  opened,
+  onClose,
+  onPick,
+  targetInstanceId,
+}: ComponentPickerModalProps) {
   const {
     currentPage,
     getAllRegisteredComponents,
     getComponentProps,
-    setCurrentPage,
     hasChildren,
     getChildren,
     getFieldRestrictions,
   } = useComponentRegistry();
+  const labels = useEditorLabels();
 
-  const allComponents = getAllRegisteredComponents();
-
-  const { isModalOpen, setModalOpen, isAbove, selectedInstanceId } = useEditor();
   const [search, setSearch] = useState("");
 
-  // Determine the target container and field to apply restrictions
   const filteredComponents = useMemo(() => {
-    let components = allComponents;
+    let components = getAllRegisteredComponents();
 
-    // Apply widget restrictions if we have a selected instance
-    if (selectedInstanceId) {
-      const parentInfo = findParent(
+    if (targetInstanceId != null) {
+      // The insert target: into the node itself when it is a container,
+      // otherwise as a sibling inside its parent.
+      const targetNode = findNode(
         currentPage,
-        selectedInstanceId,
+        targetInstanceId,
         hasChildren,
         getChildren
       );
+      const container =
+        targetNode && hasChildren(targetNode)
+          ? { node: targetNode, field: getChildren(targetNode)?.[0] ?? "children" }
+          : (() => {
+              const parentInfo = findParent(
+                currentPage,
+                targetInstanceId,
+                hasChildren,
+                getChildren
+              );
+              return parentInfo?.node
+                ? { node: parentInfo.node, field: parentInfo.field ?? "children" }
+                : null;
+            })();
 
-      if (parentInfo?.node && parentInfo.field) {
-        // Check `only` restrictions on the target field
+      if (container) {
         const restrictions = getFieldRestrictions(
-          parentInfo.node.id,
-          parentInfo.field
+          container.node.id,
+          container.field
         );
         if (restrictions) {
           components = components.filter((id) => restrictions.includes(id));
         }
+        components = components.filter((id) => {
+          const meta = getComponentProps(id);
+          if (!meta?.onlyInside) return true;
+          return meta.onlyInside.includes(container.node.id);
+        });
       }
-
-      // Filter by `onlyInside` restrictions on each component
-      components = components.filter((id) => {
-        const meta = getComponentProps(id);
-        if (!meta?.onlyInside) return true;
-        // Check if the target container matches any allowed parent
-        if (parentInfo?.node) {
-          return meta.onlyInside.includes(parentInfo.node.id);
-        }
-        return true;
-      });
     }
 
-    // Apply search filter
     if (search) {
       const lower = search.toLowerCase();
       components = components.filter((id) => {
@@ -72,9 +102,9 @@ export const ComponentExplorerModal: React.FC = () => {
     }
 
     return components;
-  }, [allComponents, selectedInstanceId, search, currentPage]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [opened, targetInstanceId, search, currentPage]);
 
-  // Group by category
   const grouped = useMemo(() => {
     const groups: Record<string, string[]> = {};
     for (const id of filteredComponents) {
@@ -84,51 +114,33 @@ export const ComponentExplorerModal: React.FC = () => {
       groups[category].push(id);
     }
     return groups;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filteredComponents]);
 
-  const handleAdd = (id: string) => {
-    if (selectedInstanceId == null) return;
-    const defaultProps = getComponentProps(id);
-    const newItem = {
-      id: id,
-      props: {
-        ...defaultProps?.defaultProps,
-        instanceId: crypto.randomUUID(),
-      },
-    };
-
-    const newTree = addItemRelativeToNode(
-      currentPage,
-      selectedInstanceId,
-      newItem,
-      isAbove ? "above" : "below",
-      hasChildren,
-      getChildren
-    );
-    setCurrentPage(newTree);
-    setModalOpen(false);
+  const close = () => {
+    onClose();
     setSearch("");
   };
 
   return (
     <Modal
-      opened={isModalOpen}
-      onClose={() => {
-        setModalOpen(false);
-        setSearch("");
-      }}
+      opened={opened}
+      onClose={close}
       title={
         <Text size="lg" fw={700} c="dark">
-          Components
+          {labels.pickerTitle}
         </Text>
       }
       size="lg"
     >
       <TextInput
-        placeholder="Search components..."
+        placeholder={labels.pickerSearchPlaceholder}
         value={search}
         onChange={(e) => setSearch(e.target.value)}
+        leftSection={<IconSearch size={14} />}
         mb="md"
+        data-autofocus
+        data-testid="picker-search"
       />
 
       <Stack gap="md">
@@ -149,18 +161,22 @@ export const ComponentExplorerModal: React.FC = () => {
                 return (
                   <div
                     key={id}
+                    data-testid={`picker-item-${id}`}
                     style={{
                       padding: "12px",
-                      backgroundColor: "#bfdbfe",
+                      backgroundColor: "#f1f5f9",
+                      border: "1px solid #e2e8f0",
                       borderRadius: "8px",
-                      boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
                       cursor: "pointer",
                       display: "flex",
                       flexDirection: "column",
                       alignItems: "center",
                       gap: "8px",
                     }}
-                    onClick={() => handleAdd(id)}
+                    onClick={() => {
+                      onPick(id);
+                      close();
+                    }}
                   >
                     {meta?.thumbnail ? (
                       <img
@@ -179,13 +195,13 @@ export const ComponentExplorerModal: React.FC = () => {
                           width: 48,
                           height: 48,
                           borderRadius: 4,
-                          backgroundColor: "#93c5fd",
+                          backgroundColor: "#cbd5e1",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
                           fontSize: 20,
                           fontWeight: 700,
-                          color: "#1e40af",
+                          color: "#334155",
                         }}
                       >
                         {(meta?.name || id).charAt(0)}
@@ -207,14 +223,10 @@ export const ComponentExplorerModal: React.FC = () => {
         ))}
         {filteredComponents.length === 0 && (
           <Text size="sm" c="dimmed" ta="center">
-            No matching components found
+            {labels.pickerEmpty}
           </Text>
         )}
       </Stack>
-
-      <Button onClick={() => { setModalOpen(false); setSearch(""); }} mt="md">
-        Close
-      </Button>
     </Modal>
   );
-};
+}

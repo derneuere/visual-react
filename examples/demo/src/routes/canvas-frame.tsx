@@ -1,4 +1,4 @@
-// The canvas iframe route — loaded by CanvasHost on the /canvas-editor page.
+// The canvas iframe route — loaded by the editor's CanvasHost (/editor).
 // Bare page: it renders NOTHING until the parent editor pushes content
 // through the bridge, and it renders through the same registry/renderer as
 // the public pages (StaticModeProvider = no dnd editing controls), so what

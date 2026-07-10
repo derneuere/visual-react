@@ -22,11 +22,6 @@
   color: #1a1b1e;
 }
 
-/* ── SortableItem control panels (edit/delete/drag buttons) ── */
-.control-panel {
-  font-family: var(--vr-font);
-}
-
 /* ── Mantine portalled elements (modals, overlays, popovers) ── */
 .mantine-Modal-root,
 .mantine-Modal-overlay,

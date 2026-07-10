@@ -1,7 +1,18 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page, type Frame } from "@playwright/test";
 import { auth } from "./login-helper";
 import { promises as fs } from "fs";
 import path from "path";
+
+/**
+ * Local file storage coverage: pages load/save/rename through the editor UI
+ * and the /api/pages + /api/assets routes directly.
+ *
+ * Editor-side flows updated for the canvas-only editor (0.4.0): content is
+ * asserted through the canvas iframe, edits go through the property panel,
+ * structure changes through the layer tree / component picker, and preview
+ * is the Desktop/Mobile view-mode switch (the in-document "Previewing"
+ * toggle and SortableItem chrome no longer exist).
+ */
 
 const PAGES_DIR = path.resolve(process.cwd(), "pages");
 const TEST_PAGE_PREFIX = "storage-test";
@@ -18,6 +29,11 @@ async function writeTestPage(name: string, data: any) {
 async function readTestPage(name: string) {
   const content = await fs.readFile(testPagePath(name), "utf-8");
   return JSON.parse(content);
+}
+
+/** Saved files may be the raw content array or a { meta, content } envelope. */
+function pageContent(saved: any) {
+  return Array.isArray(saved) ? saved : saved.content;
 }
 
 async function deleteTestPage(name: string) {
@@ -54,14 +70,34 @@ function createPageData(title: string, children: any[] = []) {
   ];
 }
 
-/** Wait for the editor to be fully loaded and interactive */
-async function waitForEditor(page) {
-  // The control panel labels (e.g. "Section ☰ ✏️ 🗑️") are always visible
-  await page.waitForSelector('text=Not Previewing', { timeout: 10000 });
-  await page.waitForSelector('.control-panel', { timeout: 10000 });
+/** Wait for the canvas editor to be loaded and return the canvas frame. */
+async function waitForEditor(page: Page): Promise<Frame> {
+  await expect(page.locator('iframe[title="Canvas"]')).toBeVisible({
+    timeout: 30_000,
+  });
+  // The frame registers once the iframe's src actually loads — poll for it.
+  let frame: Frame | undefined;
+  await expect
+    .poll(
+      () => {
+        frame = page.frames().find((f) => f.url().includes("/canvas-frame"));
+        return frame != null;
+      },
+      { timeout: 30_000 }
+    )
+    .toBe(true);
+  if (!frame) throw new Error("canvas iframe frame not found");
+  // Attached (not visible): pages whose only section is empty render a
+  // zero-height wrapper — the content push having arrived is what matters.
+  await expect(frame.locator("[data-instance-id]").first()).toBeAttached({
+    timeout: 30_000,
+  });
+  return frame;
 }
 
 test.describe("Local Storage - Pages", () => {
+  test.setTimeout(60_000);
+
   test.beforeEach(async ({ page }) => {
     await auth.setupAuthCookie(page);
   });
@@ -94,57 +130,48 @@ test.describe("Local Storage - Pages", () => {
 
     await page.goto(`/editor/${pageName}`);
     await auth.handleLoginForm(page);
-    await waitForEditor(page);
+    const frame = await waitForEditor(page);
 
-    // The Title component text should be visible
-    await expect(page.locator('text=Load Test')).toBeVisible();
+    // The Title component renders inside the canvas iframe.
+    await expect(frame.getByText("Load Test")).toBeVisible();
   });
 
   test("saves page changes via the Publish button", async ({ page }) => {
     const pageName = `${TEST_PAGE_PREFIX}-save`;
-    const originalData = createPageData("Save Test Page", [
-      {
-        id: "Title",
-        props: {
-          instanceId: `title-save`,
-          label: "Original Title",
-          size: 1,
-          alignment: "center",
+    await writeTestPage(
+      pageName,
+      createPageData("Save Test Page", [
+        {
+          id: "Title",
+          props: {
+            instanceId: `title-save`,
+            label: "Original Title",
+            size: 1,
+            alignment: "center",
+          },
         },
-      },
-    ]);
-    await writeTestPage(pageName, originalData);
+      ])
+    );
 
     await page.goto(`/editor/${pageName}`);
     await auth.handleLoginForm(page);
-    await waitForEditor(page);
+    const frame = await waitForEditor(page);
 
-    // Click the edit button (pencil) on the Title component to select it
-    const editButton = page.locator('[data-testid="edit-button"]').first();
-    await editButton.click({ force: true });
+    // Select the Title in the canvas and change its label in the panel.
+    await frame.locator('[data-instance-id="title-save"]').click();
+    const panel = page.getByTestId("property-panel");
+    await expect(panel).toBeVisible();
+    await panel.getByLabel("label", { exact: true }).fill("Updated Title");
 
-    // Wait for the editing panel to appear
-    await page.waitForSelector('text=Edit Component', { timeout: 5000 });
-
-    // Find the label input by its label text and change it
-    const labelInput = page.locator('label:has-text("label")').locator('..').locator('input');
-    await labelInput.clear();
-    await labelInput.fill("Updated Title");
-
-    // Click Publish — the button should now be enabled since we changed content
-    const publishButton = page.locator('button:has-text("Publish")');
-    await expect(publishButton).toBeEnabled({ timeout: 2000 });
+    // Click Publish — enabled since we changed content.
+    const publishButton = page.getByRole("button", { name: "Publish" });
+    await expect(publishButton).toBeEnabled({ timeout: 5_000 });
     await publishButton.click();
-
-    // Wait for save to complete
     await page.waitForTimeout(1000);
 
-    // Verify the file was updated on disk
-    const savedData = await readTestPage(pageName);
-    expect(savedData).toBeTruthy();
-    expect(Array.isArray(savedData)).toBe(true);
-    // Verify the label was actually saved
-    const titleComponent = savedData[0].props.children[0].props.children[0];
+    // Verify the file was updated on disk.
+    const content = pageContent(await readTestPage(pageName));
+    const titleComponent = content[0].props.children[0].props.children[0];
     expect(titleComponent.props.label).toBe("Updated Title");
   });
 
@@ -156,14 +183,13 @@ test.describe("Local Storage - Pages", () => {
 
     await page.goto(`/editor/${page1Name}`);
     await auth.handleLoginForm(page);
+    await waitForEditor(page);
 
-    // Wait for navigation to load
-    await page.waitForSelector('text=Pages', { timeout: 10000 });
+    // Page management lives in the "Pages" tab of the left sidebar.
+    await page.locator(".mantine-SegmentedControl-label", { hasText: "Pages" }).click();
 
-    // Both pages should appear in the navigation
-    const navContent = await page.locator('text=Pages').locator('..').locator('..').textContent();
-    expect(navContent).toContain(page1Name);
-    expect(navContent).toContain(page2Name);
+    await expect(page.getByText(page1Name)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(page2Name)).toBeVisible();
   });
 
   test("navigates between pages", async ({ page }) => {
@@ -202,14 +228,11 @@ test.describe("Local Storage - Pages", () => {
     await auth.handleLoginForm(page);
     await waitForEditor(page);
 
-    // Click on page B in the navigation
-    const pageBLink = page.locator(`a[href="/editor/${page2Name}"]`).or(
-      page.locator(`button:has-text("${page2Name}")`)
-    );
-    await pageBLink.click();
+    // Switch to the Pages tab and click page B.
+    await page.locator(".mantine-SegmentedControl-label", { hasText: "Pages" }).click();
+    await page.getByText(page2Name).first().click();
 
-    // Wait for page B to load
-    await page.waitForURL(`**/editor/${page2Name}`, { timeout: 5000 });
+    await page.waitForURL(`**/editor/${page2Name}`, { timeout: 10_000 });
     expect(page.url()).toContain(page2Name);
   });
 
@@ -244,14 +267,14 @@ test.describe("Local Storage - Pages", () => {
     await auth.handleLoginForm(page);
 
     // Wait for content to render
-    await page.waitForSelector('text=Hello World', { timeout: 10000 });
+    await page.waitForSelector("text=Hello World", { timeout: 10_000 });
 
     const body = await page.textContent("body");
     expect(body).toContain("Hello World");
     expect(body).toContain("This is a test paragraph.");
   });
 
-  test("adds a component via the component explorer", async ({ page }) => {
+  test("adds a component via the component picker", async ({ page }) => {
     const pageName = `${TEST_PAGE_PREFIX}-add-component`;
     await writeTestPage(
       pageName,
@@ -270,28 +293,20 @@ test.describe("Local Storage - Pages", () => {
 
     await page.goto(`/editor/${pageName}`);
     await auth.handleLoginForm(page);
-    await waitForEditor(page);
+    const frame = await waitForEditor(page);
 
-    // Count components before adding
-    const countBefore = await page.locator('.control-panel').count();
+    const countBefore = await frame.locator("[data-instance-id]").count();
 
-    // Click the + button below a component to open the component explorer
-    const addButton = page.locator('[data-testid="add-below-button"]').first();
-    await addButton.click({ force: true });
+    // "+ Add" in the layer tree opens the searchable picker.
+    await page.getByTestId("tree-add-root").click();
+    await expect(page.getByTestId("picker-search")).toBeVisible();
+    await page.getByTestId("picker-item-Text").click();
 
-    // Wait for the component explorer modal
-    await page.waitForTimeout(500);
-
-    // Look for a component to add (e.g., Text)
-    const textOption = page.locator('button:has-text("Text")').first();
-    if (await textOption.isVisible()) {
-      await textOption.click();
-      await page.waitForTimeout(500);
-
-      // Verify a new component was added
-      const countAfter = await page.locator('.control-panel').count();
-      expect(countAfter).toBeGreaterThan(countBefore);
-    }
+    // A new component was appended to the page root.
+    await expect(frame.locator("[data-instance-id]")).toHaveCount(
+      countBefore + 1,
+      { timeout: 10_000 }
+    );
   });
 
   test("deletes a component", async ({ page }) => {
@@ -321,23 +336,26 @@ test.describe("Local Storage - Pages", () => {
 
     await page.goto(`/editor/${pageName}`);
     await auth.handleLoginForm(page);
-    await waitForEditor(page);
+    const frame = await waitForEditor(page);
 
-    // Count control panels before delete (each component has one)
-    const countBefore = await page.locator('.control-panel').count();
-    expect(countBefore).toBeGreaterThanOrEqual(2);
+    await expect(
+      frame.locator('[data-instance-id="title-delete-1"]')
+    ).toBeVisible();
 
-    // Click the delete button on the first child component (force to bypass overlay)
-    const deleteButton = page.locator('[data-testid="delete-button"]').first();
-    await deleteButton.click({ force: true });
-    await page.waitForTimeout(500);
+    // Delete via the layer-tree row action.
+    const row = page.getByTestId("tree-node-title-delete-1");
+    await row.hover();
+    await row.getByRole("button", { name: "Delete" }).click();
 
-    // Count after delete
-    const countAfter = await page.locator('.control-panel').count();
-    expect(countAfter).toBeLessThan(countBefore);
+    await expect(
+      frame.locator('[data-instance-id="title-delete-1"]')
+    ).toHaveCount(0, { timeout: 10_000 });
+    await expect(
+      frame.locator('[data-instance-id="text-delete-1"]')
+    ).toBeVisible();
   });
 
-  test("toggles preview mode", async ({ page }) => {
+  test("toggles preview mode via the view-mode switch", async ({ page }) => {
     const pageName = `${TEST_PAGE_PREFIX}-preview`;
     await writeTestPage(
       pageName,
@@ -356,29 +374,16 @@ test.describe("Local Storage - Pages", () => {
 
     await page.goto(`/editor/${pageName}`);
     await auth.handleLoginForm(page);
-    await waitForEditor(page);
+    const frame = await waitForEditor(page);
 
-    // The preview toggle should exist
-    const previewToggle = page.locator('label:has-text("Previewing")').or(
-      page.locator('label:has-text("Not Previewing")')
-    );
-    await expect(previewToggle).toBeVisible();
+    // Desktop preview: sidebars disappear, content stays.
+    await page.getByTestId("viewmode-desktop").click();
+    await expect(page.getByTestId("tree-add-root")).toHaveCount(0);
+    await expect(frame.getByText("Preview Me")).toBeVisible();
 
-    // Toggle preview on
-    await previewToggle.click();
-    await page.waitForTimeout(300);
-
-    // In preview mode, control panels should not be visible
-    const controlPanels = await page.locator('.control-panel').count();
-    expect(controlPanels).toBe(0);
-
-    // Toggle preview off
-    await previewToggle.click();
-    await page.waitForTimeout(300);
-
-    // Control panels should reappear
-    const controlPanelsAfter = await page.locator('.control-panel').count();
-    expect(controlPanelsAfter).toBeGreaterThan(0);
+    // Back to edit: chrome reappears.
+    await page.getByTestId("viewmode-edit").click();
+    await expect(page.getByTestId("tree-add-root")).toBeVisible();
   });
 
   test("page rename updates the file on disk", async ({ page }) => {
@@ -404,18 +409,18 @@ test.describe("Local Storage - Pages", () => {
     await auth.handleLoginForm(page);
     await waitForEditor(page);
 
-    // Open page settings tab
-    const settingsTab = page.locator('button:has-text("Page Settings")');
-    await settingsTab.click();
+    // Page settings live behind the Pages tab (Navigation) and open in the
+    // right sidebar.
+    await page.locator(".mantine-SegmentedControl-label", { hasText: "Pages" }).click();
+    await page.locator('[title="Page Settings"]').first().click();
     await page.waitForTimeout(300);
 
-    // Find the rename input
     const renameInput = page.locator('input[placeholder="Enter new page name"]');
     if (await renameInput.isVisible()) {
       await renameInput.fill(newName);
 
       // Click the rename action icon
-      const renameButton = renameInput.locator('..').locator('button').first();
+      const renameButton = renameInput.locator("..").locator("button").first();
       await renameButton.click({ force: true });
       await page.waitForTimeout(1000);
 

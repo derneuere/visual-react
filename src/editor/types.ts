@@ -2,6 +2,12 @@
 import { ReactNode } from 'react';
 import { Instance } from '../registry/types';
 
+/**
+ * Canvas view mode of the bundled editor: structural editing, or a
+ * device-true preview (Desktop | Mobile) rendered by the same canvas iframe.
+ */
+export type EditorViewMode = 'edit' | 'desktop' | 'mobile';
+
 // Context value type
 export interface EditorContextValue {
   selectedInstanceId: number | string | null;

@@ -70,5 +70,7 @@ export const EditorPage = () => {
     [navigate]
   );
 
-  return <Editor onNavigate={handleNavigate} />;
+  // Canvas-only editor (0.4.0): the page renders inside the /canvas-frame
+  // iframe route (CanvasBridge + the same static renderer as public pages).
+  return <Editor canvasSrc="/canvas-frame" onNavigate={handleNavigate} />;
 };

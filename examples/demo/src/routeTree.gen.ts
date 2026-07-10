@@ -12,11 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as CanvasFrameRouteImport } from './routes/canvas-frame'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as EditorIndexRouteImport } from './routes/editor/index'
-import { Route as CanvasEditorIndexRouteImport } from './routes/canvas-editor/index'
 import { Route as EditorSplatRouteImport } from './routes/editor/$'
-import { Route as CanvasEditorSplatRouteImport } from './routes/canvas-editor/$'
 import { Route as ApiExportRouteImport } from './routes/api/export'
-import { Route as ApiAssetsRouteImport } from './routes/api/assets'
+import { Route as ApiAssetsIndexRouteImport } from './routes/api/assets/index'
 import { Route as ApiPagesListRouteImport } from './routes/api/pages/list'
 import { Route as ApiAssetsSplatRouteImport } from './routes/api/assets/$'
 import { Route as ApiPagesSaveSplatRouteImport } from './routes/api/pages/save/$'
@@ -40,19 +38,9 @@ const EditorIndexRoute = EditorIndexRouteImport.update({
   path: '/editor/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CanvasEditorIndexRoute = CanvasEditorIndexRouteImport.update({
-  id: '/canvas-editor/',
-  path: '/canvas-editor/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const EditorSplatRoute = EditorSplatRouteImport.update({
   id: '/editor/$',
   path: '/editor/$',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CanvasEditorSplatRoute = CanvasEditorSplatRouteImport.update({
-  id: '/canvas-editor/$',
-  path: '/canvas-editor/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiExportRoute = ApiExportRouteImport.update({
@@ -60,9 +48,9 @@ const ApiExportRoute = ApiExportRouteImport.update({
   path: '/api/export',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiAssetsRoute = ApiAssetsRouteImport.update({
-  id: '/api/assets',
-  path: '/api/assets',
+const ApiAssetsIndexRoute = ApiAssetsIndexRouteImport.update({
+  id: '/api/assets/',
+  path: '/api/assets/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPagesListRoute = ApiPagesListRouteImport.update({
@@ -105,14 +93,12 @@ const ApiPagesCreateFolderSplatRoute =
 export interface FileRoutesByFullPath {
   '/$': typeof SplatRoute
   '/canvas-frame': typeof CanvasFrameRoute
-  '/api/assets': typeof ApiAssetsRouteWithChildren
   '/api/export': typeof ApiExportRoute
-  '/canvas-editor/$': typeof CanvasEditorSplatRoute
   '/editor/$': typeof EditorSplatRoute
-  '/canvas-editor/': typeof CanvasEditorIndexRoute
   '/editor/': typeof EditorIndexRoute
   '/api/assets/$': typeof ApiAssetsSplatRoute
   '/api/pages/list': typeof ApiPagesListRoute
+  '/api/assets/': typeof ApiAssetsIndexRoute
   '/api/pages/create-folder/$': typeof ApiPagesCreateFolderSplatRoute
   '/api/pages/delete/$': typeof ApiPagesDeleteSplatRoute
   '/api/pages/load/$': typeof ApiPagesLoadSplatRoute
@@ -122,14 +108,12 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/$': typeof SplatRoute
   '/canvas-frame': typeof CanvasFrameRoute
-  '/api/assets': typeof ApiAssetsRouteWithChildren
   '/api/export': typeof ApiExportRoute
-  '/canvas-editor/$': typeof CanvasEditorSplatRoute
   '/editor/$': typeof EditorSplatRoute
-  '/canvas-editor': typeof CanvasEditorIndexRoute
   '/editor': typeof EditorIndexRoute
   '/api/assets/$': typeof ApiAssetsSplatRoute
   '/api/pages/list': typeof ApiPagesListRoute
+  '/api/assets': typeof ApiAssetsIndexRoute
   '/api/pages/create-folder/$': typeof ApiPagesCreateFolderSplatRoute
   '/api/pages/delete/$': typeof ApiPagesDeleteSplatRoute
   '/api/pages/load/$': typeof ApiPagesLoadSplatRoute
@@ -140,14 +124,12 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/$': typeof SplatRoute
   '/canvas-frame': typeof CanvasFrameRoute
-  '/api/assets': typeof ApiAssetsRouteWithChildren
   '/api/export': typeof ApiExportRoute
-  '/canvas-editor/$': typeof CanvasEditorSplatRoute
   '/editor/$': typeof EditorSplatRoute
-  '/canvas-editor/': typeof CanvasEditorIndexRoute
   '/editor/': typeof EditorIndexRoute
   '/api/assets/$': typeof ApiAssetsSplatRoute
   '/api/pages/list': typeof ApiPagesListRoute
+  '/api/assets/': typeof ApiAssetsIndexRoute
   '/api/pages/create-folder/$': typeof ApiPagesCreateFolderSplatRoute
   '/api/pages/delete/$': typeof ApiPagesDeleteSplatRoute
   '/api/pages/load/$': typeof ApiPagesLoadSplatRoute
@@ -159,14 +141,12 @@ export interface FileRouteTypes {
   fullPaths:
     | '/$'
     | '/canvas-frame'
-    | '/api/assets'
     | '/api/export'
-    | '/canvas-editor/$'
     | '/editor/$'
-    | '/canvas-editor/'
     | '/editor/'
     | '/api/assets/$'
     | '/api/pages/list'
+    | '/api/assets/'
     | '/api/pages/create-folder/$'
     | '/api/pages/delete/$'
     | '/api/pages/load/$'
@@ -176,14 +156,12 @@ export interface FileRouteTypes {
   to:
     | '/$'
     | '/canvas-frame'
-    | '/api/assets'
     | '/api/export'
-    | '/canvas-editor/$'
     | '/editor/$'
-    | '/canvas-editor'
     | '/editor'
     | '/api/assets/$'
     | '/api/pages/list'
+    | '/api/assets'
     | '/api/pages/create-folder/$'
     | '/api/pages/delete/$'
     | '/api/pages/load/$'
@@ -193,14 +171,12 @@ export interface FileRouteTypes {
     | '__root__'
     | '/$'
     | '/canvas-frame'
-    | '/api/assets'
     | '/api/export'
-    | '/canvas-editor/$'
     | '/editor/$'
-    | '/canvas-editor/'
     | '/editor/'
     | '/api/assets/$'
     | '/api/pages/list'
+    | '/api/assets/'
     | '/api/pages/create-folder/$'
     | '/api/pages/delete/$'
     | '/api/pages/load/$'
@@ -211,13 +187,11 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   SplatRoute: typeof SplatRoute
   CanvasFrameRoute: typeof CanvasFrameRoute
-  ApiAssetsRoute: typeof ApiAssetsRouteWithChildren
   ApiExportRoute: typeof ApiExportRoute
-  CanvasEditorSplatRoute: typeof CanvasEditorSplatRoute
   EditorSplatRoute: typeof EditorSplatRoute
-  CanvasEditorIndexRoute: typeof CanvasEditorIndexRoute
   EditorIndexRoute: typeof EditorIndexRoute
   ApiPagesListRoute: typeof ApiPagesListRoute
+  ApiAssetsIndexRoute: typeof ApiAssetsIndexRoute
   ApiPagesCreateFolderSplatRoute: typeof ApiPagesCreateFolderSplatRoute
   ApiPagesDeleteSplatRoute: typeof ApiPagesDeleteSplatRoute
   ApiPagesLoadSplatRoute: typeof ApiPagesLoadSplatRoute
@@ -248,25 +222,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EditorIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/canvas-editor/': {
-      id: '/canvas-editor/'
-      path: '/canvas-editor'
-      fullPath: '/canvas-editor/'
-      preLoaderRoute: typeof CanvasEditorIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/editor/$': {
       id: '/editor/$'
       path: '/editor/$'
       fullPath: '/editor/$'
       preLoaderRoute: typeof EditorSplatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/canvas-editor/$': {
-      id: '/canvas-editor/$'
-      path: '/canvas-editor/$'
-      fullPath: '/canvas-editor/$'
-      preLoaderRoute: typeof CanvasEditorSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/export': {
@@ -276,11 +236,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiExportRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/assets': {
-      id: '/api/assets'
+    '/api/assets/': {
+      id: '/api/assets/'
       path: '/api/assets'
-      fullPath: '/api/assets'
-      preLoaderRoute: typeof ApiAssetsRouteImport
+      fullPath: '/api/assets/'
+      preLoaderRoute: typeof ApiAssetsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/pages/list': {
@@ -335,28 +295,14 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface ApiAssetsRouteChildren {
-  ApiAssetsSplatRoute: typeof ApiAssetsSplatRoute
-}
-
-const ApiAssetsRouteChildren: ApiAssetsRouteChildren = {
-  ApiAssetsSplatRoute: ApiAssetsSplatRoute,
-}
-
-const ApiAssetsRouteWithChildren = ApiAssetsRoute._addFileChildren(
-  ApiAssetsRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   SplatRoute: SplatRoute,
   CanvasFrameRoute: CanvasFrameRoute,
-  ApiAssetsRoute: ApiAssetsRouteWithChildren,
   ApiExportRoute: ApiExportRoute,
-  CanvasEditorSplatRoute: CanvasEditorSplatRoute,
   EditorSplatRoute: EditorSplatRoute,
-  CanvasEditorIndexRoute: CanvasEditorIndexRoute,
   EditorIndexRoute: EditorIndexRoute,
   ApiPagesListRoute: ApiPagesListRoute,
+  ApiAssetsIndexRoute: ApiAssetsIndexRoute,
   ApiPagesCreateFolderSplatRoute: ApiPagesCreateFolderSplatRoute,
   ApiPagesDeleteSplatRoute: ApiPagesDeleteSplatRoute,
   ApiPagesLoadSplatRoute: ApiPagesLoadSplatRoute,

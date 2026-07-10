@@ -2,10 +2,11 @@
 
 A true-WYSIWYG editing surface: the page renders inside a same-origin
 `<iframe>` while the editor in the parent window stays the single source of
-truth. This is **additive** — the classic in-document editing surface
-(`Editor` / `SortableItem` from `@derneuere/visual-react/editor`) remains
-fully supported; the canvas is an alternative surface for editors that want
-the page to look exactly like the published site while editing.
+truth. Since 0.4.0 this is **the** editing surface: the bundled Mantine
+editor (`Editor` from `@derneuere/visual-react/editor`) is built on it and
+requires a canvas route (`canvasSrc`); the old in-document editing mode
+(`SortableItem` chrome rendered into the page markup) was removed. Custom
+editors use the same pieces directly, as described here.
 
 ## Why an iframe
 
@@ -124,10 +125,13 @@ export function CanvasFrame() {
       isContainer={hasChildren}
       getInstanceLabel={(i) => getComponentProps(i.id)?.name ?? i.id}
       renderPage={({ content }) => (
-        // StaticModeProvider renders SortableItem/Block without dnd —
-        // the canvas markup stays identical to the public render.
+        // The canvas markup is identical to the public render — the
+        // renderer draws no editing chrome (all editing visuals come from
+        // the bridge overlay).
         <StaticModeProvider>
-          <ComponentRenderer items={content} notEditable />
+          <main>
+            <ComponentRenderer items={content} />
+          </main>
         </StaticModeProvider>
       )}
     />
@@ -247,30 +251,39 @@ the bridge implements it with plain pointer events:
 - target resolution via `elementFromPoint` + a `contains()` walk that
   excludes the dragged subtree,
 - shared drop-position math (`computeDropPosition` — same thresholds as the
-  in-document editor: 25%/50px container edges, leaf halves),
+  dnd-kit drop indicator: 25%/50px container edges, leaf halves),
 - auto-scroll near the viewport edges on long pages,
 - Escape cancels the drag (consumed, does not clear the selection),
 - the trailing click after a drag is suppressed,
 - result reported as `onCanvasDrop` — the parent mutates and pushes back.
 
-## Migration notes (from in-document editing)
+## Migration notes (from in-document editing, removed in 0.4.0)
 
-Nothing is removed: `Editor`, `SortableItem`, `Block` keep working unchanged.
-To offer a canvas surface next to (or instead of) the in-document one:
+The 0.4.0 release removed the in-document editing mode (`SortableItem` and
+the editing branches of `ComponentRenderer`/`Block`); pages are edited
+through the canvas. To migrate a pre-0.4.0 setup:
 
-1. Add a bare canvas route mounting `CanvasBridge` with your renderer.
-2. Replace the in-document page column with `CanvasHost`, feeding it the
-   same draft tree and selection you already manage.
+1. Add a bare canvas route mounting `CanvasBridge` with your renderer (see
+   "The bridge" above — the demo's `/canvas-frame` route is a complete
+   example).
+2. **Bundled editor:** pass the route to `<Editor canvasSrc="/canvas-frame" />`
+   — done; the editor wires selection, keys, dnd and device previews itself.
+   **Custom editor:** replace the in-document page column with `CanvasHost`,
+   feeding it the same draft tree and selection you already manage.
 3. Keyboard shortcuts: the iframe forwards Delete/Backspace/Escape while it
    has focus — handle them in `onKeyDown` exactly like your existing
    shortcut hook.
 4. dnd-kit: keep your `DndContext`, palette and drag handlers; add
    `useCanvasDnd` and branch on `data.canvas === true` (or just use the
-   `onDrop` callback) where your drag-end handler resolves droppables.
+   `onDrop` callback) where your drag-end handler resolves droppables — or
+   build on `useEditorDnd` from `./editor/dnd`, which handles the canvas
+   proxies out of the box.
 5. The overlay visuals are drawn by the bridge — remove any in-document
    selection/hover CSS from the canvas path (the page markup inside the
    iframe stays identical to the public render, modulo the
    `data-instance-id` wrappers).
+
+See also the removed-export table in the CHANGELOG's 0.4.0 section.
 
 ## Testability
 
@@ -280,4 +293,4 @@ Overlay elements carry stable data attributes:
 `data-vr-canvas-loading`, and the host overlay layer
 `data-vr-canvas-host-overlay`. The bridge move-drag listens to plain pointer
 events, so synthetic `PointerEvent`s dispatched inside the iframe drive it in
-tests (see `examples/demo/tests/canvas-editor.spec.ts`).
+tests (see `examples/demo/tests/editor.spec.ts`).

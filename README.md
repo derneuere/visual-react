@@ -5,11 +5,11 @@
 A React-based visual CMS engine. You register your own React components in a
 registry, and visual-react turns them into editable pages: content is a
 serializable **Instance tree** (component name + props + nested children),
-edited either **in-document** (drag-and-drop directly in the page, Mantine
-editor chrome) or through an **iframe canvas** (true-WYSIWYG: your app renders
-the page inside an iframe while the surrounding editor stays in full control).
-Pages load and save through pluggable **storage adapters** (REST, GitHub, or
-your own).
+edited through an **iframe canvas** (true-WYSIWYG: your app renders the page
+inside an iframe while the surrounding editor stays in full control) — either
+with the bundled Mantine editor or with your own chrome built on the headless
+hooks. Pages load and save through pluggable **storage adapters** (REST,
+GitHub, or your own).
 
 **Building blocks**
 
@@ -22,8 +22,11 @@ your own).
   keyboard shortcuts), headless and UI-free.
 - **Storage adapters** — `FetchStorageAdapter` (REST), `GitHubStorageAdapter`
   (commits pages to a repo), content migration helpers, or bring your own.
-- **In-document editor** — `/editor`: Mantine chrome, dnd-kit drag-and-drop,
-  TipTap rich text, sidebars and modals.
+- **Bundled editor** — `/editor`: canvas-only Mantine editor (since 0.4.0) —
+  palette + layer tree, component picker, property panel, undo/redo, dnd-kit
+  drags onto the iframe canvas, and Edit | Desktop | Mobile device previews
+  on one never-remounting iframe. Pass your canvas route as `canvasSrc`;
+  chrome strings are localizable via the `labels` prop.
 - **Iframe canvas** — `/canvas`: typed same-origin bridge, overlay-drawn
   selection/hover/drop indicators, device presets with scale-to-fit, and
   optional dnd-kit glue (`/canvas/dnd`). See [docs/canvas.md](docs/canvas.md).
@@ -37,7 +40,7 @@ your own).
 ## Repository layout
 
 - `/` (repo root) — the `@derneuere/visual-react` npm package (source in `src/`, library build via Vite)
-- `examples/demo` — a full TanStack Start example app: both editing surfaces (`/editor` and `/canvas-editor`), file-based page storage, static export scripts, and the Playwright e2e suite
+- `examples/demo` — a full TanStack Start example app: the canvas-only editor (`/editor` with its `/canvas-frame` iframe route), file-based page storage, static export scripts, and the Playwright e2e suite
 - `examples/backend` — an optional Python example backend (server-side page storage API)
 
 ## Installation
@@ -56,7 +59,7 @@ The package is split so the headless core stays dependency-free:
 | Import | Contents | Extra dependencies needed |
 | --- | --- | --- |
 | `@derneuere/visual-react` | Headless core: component registry, editor state (`EditorProvider`, `useEditor`, keyboard shortcuts), undo/redo (`useEditorHistory`), headless property panel (`useInstanceFields`), breadcrumbs (`useInstancePath`), page-root wrapper (`createPageRoot`/`unwrapPageRoot`), storage adapters + migration, auth, static mode, templates, tree/page utils (`moveInstance`, `computeDropPosition`, …), `ComponentLoader`, `ContentTag`, `WrapInstanceProvider` | none — only `react`/`react-dom` |
-| `@derneuere/visual-react/editor` | The in-document editing surface: `Editor`, sidebars/modals, `ComponentRenderer`, `Block`, `SortableItem`, `Draggable`, `RichTextEditor` | the optional peers below |
+| `@derneuere/visual-react/editor` | The bundled canvas-only editor: `Editor` (requires `canvasSrc`), chrome building blocks (sidebars, layer tree, palette, picker modal, property panel), the static render pieces `ComponentRenderer` / `Block`, `Draggable`, `RichTextEditor` | the optional peers below |
 | `@derneuere/visual-react/editor/dnd` | Headless dnd orchestration for custom editors (`useEditorDnd`, `usePaletteDraggable`, `useTreeDroppable`) — see [docs/headless-editor.md](docs/headless-editor.md) | `@dnd-kit/core`, `@dnd-kit/sortable` |
 | `@derneuere/visual-react/editor.css` | Stylesheet for the editor entry (import it once alongside `/editor`) | — |
 | `@derneuere/visual-react/canvas` | Iframe canvas: `CanvasBridge` (iframe side), `CanvasHost` (parent side), the typed bridge protocol, `CANVAS_DEVICE_PRESETS` — see [docs/canvas.md](docs/canvas.md) | none — only `react`/`react-dom` |
@@ -106,14 +109,40 @@ function App({ children }) {
 }
 ```
 
-### In-document editor (`./editor`)
+### Bundled editor (`./editor`)
+
+The editor is canvas-only (since 0.4.0): it edits the page through an iframe
+canvas. Create a bare canvas route in your app and pass its URL:
 
 ```tsx
+// /canvas-frame — the canvas route, rendered inside the iframe
+import { useComponentRegistry, StaticModeProvider } from "@derneuere/visual-react";
+import { CanvasBridge } from "@derneuere/visual-react/canvas";
+import { ComponentRenderer } from "@derneuere/visual-react/editor";
+
+function CanvasFrame() {
+  const { hasChildren, getComponentProps } = useComponentRegistry();
+  return (
+    <CanvasBridge
+      isContainer={hasChildren}
+      getInstanceLabel={(i) => getComponentProps(i.id)?.name ?? i.id}
+      renderPage={({ content }) => (
+        <StaticModeProvider>
+          <main>
+            <ComponentRenderer items={content} />
+          </main>
+        </StaticModeProvider>
+      )}
+    />
+  );
+}
+
+// editor route — inside the provider stack above:
 import { Editor } from "@derneuere/visual-react/editor";
 import "@derneuere/visual-react/editor.css";
 
-// inside the provider stack above:
-<Editor />
+<Editor canvasSrc="/canvas-frame" />
+// localize the chrome: <Editor canvasSrc="…" labels={{ publish: "Veröffentlichen" }} />
 ```
 
 ### Iframe canvas (`./canvas`)
@@ -145,13 +174,13 @@ import { CanvasHost, CANVAS_DEVICE_PRESETS } from "@derneuere/visual-react/canva
 
 Full walkthrough (including drag-and-drop from a palette via
 `/canvas/dnd`): [docs/canvas.md](docs/canvas.md). Working example:
-`examples/demo` routes `/canvas-editor` and `/canvas-frame`.
+`examples/demo` routes `/editor` and `/canvas-frame`.
 
 ## Examples
 
 - [`examples/demo`](examples/demo) — complete TanStack Start integration:
   component registration via `ComponentLoader`, file-based page storage API
-  routes, both editing surfaces, static export, Playwright e2e tests.
+  routes, the canvas-only editor, static export, Playwright e2e tests.
 - [`examples/backend`](examples/backend) — Python (nanodjango) backend
   showing server-side page storage + auth behind `FetchStorageAdapter`.
 
@@ -176,7 +205,7 @@ that pattern if you consume the package as a `file:` or git dependency.
 
 ## Releases
 
-Current version: **0.2.0**.
+Current version: **0.4.0**.
 
 To cut a release:
 
