@@ -40,13 +40,6 @@ your own).
 npm install @derneuere/visual-react
 ```
 
-Until the package lands on the npm registry you can install it as a git
-dependency — the `prepare` script builds `dist/` on install:
-
-```bash
-npm install github:derneuere/visual-react
-```
-
 `react` and `react-dom` v19 are the only required peers. The editor entry
 needs additional optional peers (see the matrix below).
 
