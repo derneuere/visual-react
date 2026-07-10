@@ -1,0 +1,37 @@
+{
+  "meta": {
+    "title": "layers",
+    "slug": "",
+    "status": "published",
+    "description": "",
+    "ogTitle": "",
+    "ogDescription": "",
+    "ogImage": "",
+    "createdAt": "2026-03-15T08:53:40.357Z",
+    "updatedAt": "2026-03-15T08:53:40.357Z"
+  },
+  "content": [
+    {
+      "id": "Page",
+      "props": {
+        "instanceId": "5ec18c16-6bd0-4209-b459-64ec2bd341ff",
+        "title": "layers",
+        "children": [
+          {
+            "id": "Section",
+            "props": {
+              "title": "",
+              "instanceId": "20fdf5f0-a490-436c-be18-a4611b2a9a8e",
+              "children": [],
+              "backgroundColor": "secondary",
+              "alignment": "center",
+              "height": "100%",
+              "width": "100%",
+              "noPadding": true
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

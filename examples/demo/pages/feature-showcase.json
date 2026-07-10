@@ -1,0 +1,574 @@
+{
+  "meta": {
+    "title": "Visual React - Feature Showcase",
+    "slug": "",
+    "status": "published",
+    "description": "",
+    "ogTitle": "",
+    "ogDescription": "",
+    "ogImage": "",
+    "createdAt": "2026-03-15T09:27:53.752Z",
+    "updatedAt": "2026-03-15T09:33:24.959Z"
+  },
+  "content": [
+    {
+      "id": "Page",
+      "props": {
+        "instanceId": "showcase-page-1",
+        "title": "Visual React - Feature Showcase",
+        "children": [
+          {
+            "id": "Section",
+            "props": {
+              "instanceId": "showcase-hero",
+              "children": [
+                {
+                  "id": "Title",
+                  "props": {
+                    "instanceId": "showcase-hero-title",
+                    "label": "Visual React",
+                    "size": 1,
+                    "alignment": "center",
+                    "color": "white"
+                  }
+                },
+                {
+                  "id": "Text",
+                  "props": {
+                    "instanceId": "showcase-hero-subtitle",
+                    "content": "<p>A <strong>visual page builder</strong> for React. Drag, drop, edit, and publish — all from your browser.</p>",
+                    "size": "lg",
+                    "color": "white",
+                    "alignment": "center"
+                  }
+                },
+                {
+                  "id": "Space",
+                  "props": {
+                    "instanceId": "showcase-hero-space",
+                    "size": "md"
+                  }
+                },
+                {
+                  "id": "Button",
+                  "props": {
+                    "instanceId": "showcase-hero-cta",
+                    "label": "Get Started",
+                    "variant": "primary",
+                    "isPrimary": true,
+                    "link": {
+                      "url": "https://github.com/visual-react",
+                      "title": "View on GitHub",
+                      "target": "_blank"
+                    }
+                  }
+                }
+              ],
+              "backgroundColor": "primary",
+              "alignment": "center",
+              "height": "60vh",
+              "width": "100%",
+              "verticalCenter": true,
+              "horizontalCenter": true,
+              "gap": "1rem",
+              "padding": "3rem"
+            }
+          },
+          {
+            "id": "Section",
+            "props": {
+              "instanceId": "showcase-features-intro",
+              "children": [
+                {
+                  "id": "Title",
+                  "props": {
+                    "instanceId": "showcase-features-title",
+                    "label": "10 New Features",
+                    "size": 2,
+                    "alignment": "center",
+                    "color": "dark"
+                  }
+                },
+                {
+                  "id": "Text",
+                  "props": {
+                    "instanceId": "showcase-features-desc",
+                    "content": "<p>We've added <strong>10 powerful features</strong> to bring Visual React on par with professional CMS widget systems. From new field types to copy/paste, validation, and in-place editing — here's everything that's new.</p>",
+                    "size": "md",
+                    "color": "gray",
+                    "alignment": "center"
+                  }
+                }
+              ],
+              "backgroundColor": "secondary",
+              "alignment": "center",
+              "height": "auto",
+              "width": "800px",
+              "horizontalCenter": true,
+              "verticalCenter": false,
+              "gap": "1.5rem",
+              "padding": "4rem 2rem"
+            }
+          },
+          {
+            "id": "SplitLayout",
+            "props": {
+              "instanceId": "showcase-split-1",
+              "leftChildren": [
+                {
+                  "id": "Section",
+                  "props": {
+                    "instanceId": "showcase-link-section",
+                    "children": [
+                      {
+                        "id": "Title",
+                        "props": {
+                          "instanceId": "showcase-link-title",
+                          "label": "1. Link Field Type",
+                          "size": 3,
+                          "alignment": "left",
+                          "color": "dark"
+                        }
+                      },
+                      {
+                        "id": "Text",
+                        "props": {
+                          "instanceId": "showcase-link-desc",
+                          "content": "<p>Links are no longer plain strings. The new <strong>link</strong> field type stores structured data: URL, title, and target window. Click the edit button on the button below to see it in action.</p>",
+                          "size": "sm",
+                          "color": "gray",
+                          "alignment": "left"
+                        }
+                      },
+                      {
+                        "id": "Button",
+                        "props": {
+                          "instanceId": "showcase-link-button",
+                          "label": "I have a structured link!",
+                          "variant": "primary",
+                          "link": {
+                            "url": "https://example.com",
+                            "title": "Example Website",
+                            "target": "_blank"
+                          }
+                        }
+                      }
+                    ],
+                    "backgroundColor": "tertiary",
+                    "alignment": "left",
+                    "height": "auto",
+                    "width": "100%",
+                    "gap": "1rem",
+                    "padding": "2rem"
+                  }
+                }
+              ],
+              "rightChildren": [
+                {
+                  "id": "Section",
+                  "props": {
+                    "instanceId": "showcase-inplace-section",
+                    "children": [
+                      {
+                        "id": "Title",
+                        "props": {
+                          "instanceId": "showcase-inplace-title",
+                          "label": "2. In-Place Text Editing",
+                          "size": 3,
+                          "alignment": "left",
+                          "color": "dark"
+                        }
+                      },
+                      {
+                        "id": "Text",
+                        "props": {
+                          "instanceId": "showcase-inplace-desc",
+                          "content": "<p>Components can now opt into <strong>inline editing</strong> using the new <code>ContentTag</code> component. String and rich text fields become editable right on the canvas — no sidebar needed.</p>",
+                          "size": "sm",
+                          "color": "gray",
+                          "alignment": "left"
+                        }
+                      }
+                    ],
+                    "backgroundColor": "tertiary",
+                    "alignment": "left",
+                    "height": "auto",
+                    "width": "100%",
+                    "gap": "1rem",
+                    "padding": "2rem"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "SplitLayout",
+            "props": {
+              "instanceId": "showcase-split-2",
+              "leftChildren": [
+                {
+                  "id": "Section",
+                  "props": {
+                    "instanceId": "showcase-restrictions-section",
+                    "children": [
+                      {
+                        "id": "Title",
+                        "props": {
+                          "instanceId": "showcase-restrictions-title",
+                          "label": "3. Widget Restrictions",
+                          "size": 3,
+                          "alignment": "left",
+                          "color": "dark"
+                        }
+                      },
+                      {
+                        "id": "Text",
+                        "props": {
+                          "instanceId": "showcase-restrictions-desc",
+                          "content": "<p>Control which widgets can be placed where. Use <strong>only</strong> on componentlist fields to restrict allowed children, or <strong>onlyInside</strong> on widget metadata to restrict valid containers. The component picker filters automatically.</p>",
+                          "size": "sm",
+                          "color": "gray",
+                          "alignment": "left"
+                        }
+                      }
+                    ],
+                    "backgroundColor": "tertiary",
+                    "alignment": "left",
+                    "height": "auto",
+                    "width": "100%",
+                    "gap": "1rem",
+                    "padding": "2rem"
+                  }
+                }
+              ],
+              "rightChildren": [
+                {
+                  "id": "Section",
+                  "props": {
+                    "instanceId": "showcase-validation-section",
+                    "children": [
+                      {
+                        "id": "Title",
+                        "props": {
+                          "instanceId": "showcase-validation-title",
+                          "label": "4. Validation",
+                          "size": 3,
+                          "alignment": "left",
+                          "color": "dark"
+                        }
+                      },
+                      {
+                        "id": "Text",
+                        "props": {
+                          "instanceId": "showcase-validation-desc",
+                          "content": "<p>Components can define <strong>validation rules</strong> with three severity levels: error (red), warning (yellow), and info (blue). Validation results appear below the property panel, and error badges show on the widget control bar.</p>",
+                          "size": "sm",
+                          "color": "gray",
+                          "alignment": "left"
+                        }
+                      },
+                      {
+                        "id": "Button",
+                        "props": {
+                          "instanceId": "showcase-validation-button",
+                          "label": "Test",
+                          "variant": "secondary",
+                          "link": {
+                            "url": "/complex-page",
+                            "title": "",
+                            "target": "_self"
+                          }
+                        }
+                      }
+                    ],
+                    "backgroundColor": "tertiary",
+                    "alignment": "left",
+                    "height": "auto",
+                    "width": "100%",
+                    "gap": "1rem",
+                    "padding": "2rem"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "Section",
+            "props": {
+              "instanceId": "showcase-dates-section",
+              "children": [
+                {
+                  "id": "Title",
+                  "props": {
+                    "instanceId": "showcase-dates-title",
+                    "label": "5. Date & DateTime Fields",
+                    "size": 2,
+                    "alignment": "center",
+                    "color": "dark"
+                  }
+                },
+                {
+                  "id": "Text",
+                  "props": {
+                    "instanceId": "showcase-dates-desc",
+                    "content": "<p>Two new field types: <strong>date</strong> and <strong>datetime</strong>. Both use native browser date pickers wrapped in Mantine styling. Dates are stored as ISO strings for easy serialization. Perfect for event dates, publish dates, or any temporal data.</p>",
+                    "size": "md",
+                    "color": "gray",
+                    "alignment": "center"
+                  }
+                }
+              ],
+              "backgroundColor": "secondary",
+              "alignment": "center",
+              "height": "auto",
+              "width": "800px",
+              "horizontalCenter": true,
+              "gap": "1.5rem",
+              "padding": "3rem 2rem"
+            }
+          },
+          {
+            "id": "SplitLayout",
+            "props": {
+              "instanceId": "showcase-split-3",
+              "leftChildren": [
+                {
+                  "id": "Section",
+                  "props": {
+                    "instanceId": "showcase-multienum-section",
+                    "children": [
+                      {
+                        "id": "Title",
+                        "props": {
+                          "instanceId": "showcase-multienum-title",
+                          "label": "6. MultiEnum & StringList",
+                          "size": 3,
+                          "alignment": "left",
+                          "color": "dark"
+                        }
+                      },
+                      {
+                        "id": "Text",
+                        "props": {
+                          "instanceId": "showcase-multienum-desc",
+                          "content": "<p><strong>multienum</strong> renders as a multi-select dropdown for picking several predefined options. <strong>stringlist</strong> renders as a tag input for freeform string lists. Both store arrays of strings. Great for tags, categories, or feature flags.</p>",
+                          "size": "sm",
+                          "color": "gray",
+                          "alignment": "left"
+                        }
+                      }
+                    ],
+                    "backgroundColor": "tertiary",
+                    "alignment": "left",
+                    "height": "auto",
+                    "width": "100%",
+                    "gap": "1rem",
+                    "padding": "2rem"
+                  }
+                }
+              ],
+              "rightChildren": [
+                {
+                  "id": "Section",
+                  "props": {
+                    "instanceId": "showcase-tabs-section",
+                    "children": [
+                      {
+                        "id": "Title",
+                        "props": {
+                          "instanceId": "showcase-tabs-title",
+                          "label": "7. Property Groups / Tabs",
+                          "size": 3,
+                          "alignment": "left",
+                          "color": "dark"
+                        }
+                      },
+                      {
+                        "id": "Text",
+                        "props": {
+                          "instanceId": "showcase-tabs-desc",
+                          "content": "<p>Components with many properties can organize them into <strong>tabs</strong>. Define <code>propertyGroups</code> in metadata and the editing panel renders Mantine Tabs instead of a flat list. Try editing the Button — it has Content and Style tabs.</p>",
+                          "size": "sm",
+                          "color": "gray",
+                          "alignment": "left"
+                        }
+                      },
+                      {
+                        "id": "Button",
+                        "props": {
+                          "instanceId": "showcase-tabs-demo-button",
+                          "label": "Edit me to see tabs!",
+                          "variant": "primary",
+                          "link": {
+                            "url": "https://example.com",
+                            "title": "Demo link",
+                            "target": "_self"
+                          }
+                        }
+                      }
+                    ],
+                    "backgroundColor": "tertiary",
+                    "alignment": "left",
+                    "height": "auto",
+                    "width": "100%",
+                    "gap": "1rem",
+                    "padding": "2rem"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "SplitLayout",
+            "props": {
+              "instanceId": "showcase-split-4",
+              "leftChildren": [
+                {
+                  "id": "Section",
+                  "props": {
+                    "instanceId": "showcase-copypaste-section",
+                    "children": [
+                      {
+                        "id": "Title",
+                        "props": {
+                          "instanceId": "showcase-copypaste-title",
+                          "label": "8. Copy / Paste / Duplicate",
+                          "size": 3,
+                          "alignment": "left",
+                          "color": "dark"
+                        }
+                      },
+                      {
+                        "id": "Text",
+                        "props": {
+                          "instanceId": "showcase-copypaste-desc",
+                          "content": "<p>Every widget now has <strong>copy, paste, and duplicate</strong> buttons in the control bar. Copy a widget, navigate to another spot, and paste. Or duplicate in one click. Deep cloning ensures all nested children get fresh unique IDs.</p>",
+                          "size": "sm",
+                          "color": "gray",
+                          "alignment": "left"
+                        }
+                      }
+                    ],
+                    "backgroundColor": "tertiary",
+                    "alignment": "left",
+                    "height": "auto",
+                    "width": "100%",
+                    "gap": "1rem",
+                    "padding": "2rem"
+                  }
+                }
+              ],
+              "rightChildren": [
+                {
+                  "id": "Section",
+                  "props": {
+                    "instanceId": "showcase-conditional-section",
+                    "children": [
+                      {
+                        "id": "Title",
+                        "props": {
+                          "instanceId": "showcase-conditional-title",
+                          "label": "9. Conditional Properties",
+                          "size": 3,
+                          "alignment": "left",
+                          "color": "dark"
+                        }
+                      },
+                      {
+                        "id": "Text",
+                        "props": {
+                          "instanceId": "showcase-conditional-desc",
+                          "content": "<p>Properties can be <strong>shown or hidden</strong> based on other property values. Define <code>conditionalProperties</code> in metadata with <code>showIf</code> rules (equals, notEquals, oneOf). The editing panel dynamically hides irrelevant fields.</p>",
+                          "size": "sm",
+                          "color": "gray",
+                          "alignment": "left"
+                        }
+                      }
+                    ],
+                    "backgroundColor": "tertiary",
+                    "alignment": "left",
+                    "height": "auto",
+                    "width": "100%",
+                    "gap": "1rem",
+                    "padding": "2rem"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "Section",
+            "props": {
+              "instanceId": "showcase-thumbnails-section",
+              "children": [
+                {
+                  "id": "Title",
+                  "props": {
+                    "instanceId": "showcase-thumbnails-title",
+                    "label": "10. Widget Thumbnails & Categories",
+                    "size": 2,
+                    "alignment": "center",
+                    "color": "dark"
+                  }
+                },
+                {
+                  "id": "Text",
+                  "props": {
+                    "instanceId": "showcase-thumbnails-desc",
+                    "content": "<p>The component picker is now a <strong>visual grid</strong> grouped by category. Components can define a <code>thumbnail</code> image and <code>category</code> in their metadata. A search bar lets you quickly find components by name, description, or category. Try clicking any + button to see it!</p>",
+                    "size": "md",
+                    "color": "gray",
+                    "alignment": "center"
+                  }
+                }
+              ],
+              "backgroundColor": "secondary",
+              "alignment": "center",
+              "height": "auto",
+              "width": "800px",
+              "horizontalCenter": true,
+              "gap": "1.5rem",
+              "padding": "3rem 2rem"
+            }
+          },
+          {
+            "id": "Section",
+            "props": {
+              "instanceId": "showcase-footer",
+              "children": [
+                {
+                  "id": "Title",
+                  "props": {
+                    "instanceId": "showcase-footer-title",
+                    "label": "Built with Visual React",
+                    "size": 4,
+                    "alignment": "center",
+                    "color": "white"
+                  }
+                },
+                {
+                  "id": "Text",
+                  "props": {
+                    "instanceId": "showcase-footer-text",
+                    "content": "<p>This entire page was created as a JSON file and rendered by the Visual React engine. Every section, title, text block, and button is a widget instance in a tree.</p>",
+                    "size": "sm",
+                    "color": "white",
+                    "alignment": "center"
+                  }
+                }
+              ],
+              "backgroundColor": "primary",
+              "alignment": "center",
+              "height": "auto",
+              "width": "100%",
+              "horizontalCenter": true,
+              "verticalCenter": true,
+              "gap": "1rem",
+              "padding": "3rem 2rem"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+/*
+ * Editor chrome isolation from app-level CSS frameworks (Bootstrap, etc.).
+ *
+ * App stylesheets often set global font-family / font-size on `body`
+ * which is correct for the page content but wrong for the editor UI.
+ * These rules reset only the editor chrome (sidebars, top-bar, control
+ * panels) back to the system font stack, leaving the content area
+ * untouched so it inherits the app's styles.
+ */
+
+/* ── System font stack used by the editor chrome ── */
+:root {
+  --vr-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+/* ── Editor chrome (sidebars, top-bar) ── */
+.vr-chrome {
+  font-family: var(--vr-font);
+  font-size: 14px;
+  line-height: 1.55;
+  color: #1a1b1e;
+}
+
+/* ── SortableItem control panels (edit/delete/drag buttons) ── */
+.control-panel {
+  font-family: var(--vr-font);
+}
+
+/* ── Mantine portalled elements (modals, overlays, popovers) ── */
+.mantine-Modal-root,
+.mantine-Modal-overlay,
+.mantine-Modal-inner,
+.mantine-Modal-content,
+.mantine-Popover-dropdown,
+.mantine-Menu-dropdown,
+.mantine-Tooltip-tooltip {
+  font-family: var(--vr-font);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+/* ── Modal overlay must cover the full viewport ── */
+.mantine-Modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+}
+
+.mantine-Modal-inner {
+  position: fixed;
+  inset: 0;
+  z-index: 201;
+}

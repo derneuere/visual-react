@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      # "npm ci" runs the "prepare" script, which is the full library build
+      # (vite build + tsc declarations), so a broken build fails right here.
+      - run: npm ci
+      - run: npm test
+
+  demo-e2e:
+    # Playwright suite for examples/demo. Best-effort while the suite is
+    # being stabilized (it has drifted from the current editor UI).
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            examples/demo/package-lock.json
+      # Build the library first: the demo consumes it via file:../.. and
+      # resolves the built dist/ through the package exports map.
+      - run: npm ci
+      - run: npm ci
+        working-directory: examples/demo
+      - run: npx playwright install --with-deps chromium
+        working-directory: examples/demo
+      - run: npm test
+        working-directory: examples/demo

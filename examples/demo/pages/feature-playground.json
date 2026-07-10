@@ -1,0 +1,413 @@
+[
+  {
+    "id": "Page",
+    "props": {
+      "instanceId": "playground-page-1",
+      "title": "Feature Playground",
+      "children": [
+        {
+          "id": "Section",
+          "props": {
+            "instanceId": "playground-header",
+            "children": [
+              {
+                "id": "Title",
+                "props": {
+                  "instanceId": "playground-header-title",
+                  "label": "Feature Playground",
+                  "size": 1,
+                  "alignment": "center",
+                  "color": "white"
+                }
+              },
+              {
+                "id": "Text",
+                "props": {
+                  "instanceId": "playground-header-desc",
+                  "content": "<p>Open this page in the <strong>editor</strong> and try out all the new features. Click the edit icon on any widget to explore its properties.</p>",
+                  "size": "md",
+                  "color": "white",
+                  "alignment": "center"
+                }
+              }
+            ],
+            "backgroundColor": "primary",
+            "alignment": "center",
+            "height": "30vh",
+            "width": "100%",
+            "verticalCenter": true,
+            "horizontalCenter": true,
+            "gap": "1rem",
+            "padding": "2rem"
+          }
+        },
+        {
+          "id": "Section",
+          "props": {
+            "instanceId": "playground-link-demo",
+            "children": [
+              {
+                "id": "Title",
+                "props": {
+                  "instanceId": "playground-link-demo-title",
+                  "label": "Link Field Type",
+                  "size": 3,
+                  "alignment": "left",
+                  "color": "dark"
+                }
+              },
+              {
+                "id": "Text",
+                "props": {
+                  "instanceId": "playground-link-demo-intro",
+                  "content": "<p>These buttons use the new <code>link</code> field type. Edit them to see the structured link editor with URL, title, and target fields.</p>",
+                  "size": "sm",
+                  "color": "gray",
+                  "alignment": "left"
+                }
+              },
+              {
+                "id": "Button",
+                "props": {
+                  "instanceId": "playground-link-btn-1",
+                  "label": "Opens in new tab",
+                  "variant": "primary",
+                  "link": {
+                    "url": "https://github.com",
+                    "title": "GitHub",
+                    "target": "_blank"
+                  }
+                }
+              },
+              {
+                "id": "Button",
+                "props": {
+                  "instanceId": "playground-link-btn-2",
+                  "label": "Opens in same tab",
+                  "variant": "secondary",
+                  "link": {
+                    "url": "https://example.com",
+                    "title": "Example",
+                    "target": "_self"
+                  }
+                }
+              },
+              {
+                "id": "Button",
+                "props": {
+                  "instanceId": "playground-link-btn-3",
+                  "label": "No link set",
+                  "variant": "default",
+                  "link": {
+                    "url": "",
+                    "title": "",
+                    "target": "_self"
+                  }
+                }
+              }
+            ],
+            "backgroundColor": "secondary",
+            "alignment": "left",
+            "height": "auto",
+            "width": "800px",
+            "horizontalCenter": true,
+            "gap": "1rem",
+            "padding": "2.5rem"
+          }
+        },
+        {
+          "id": "Section",
+          "props": {
+            "instanceId": "playground-validation-demo",
+            "children": [
+              {
+                "id": "Title",
+                "props": {
+                  "instanceId": "playground-validation-demo-title",
+                  "label": "Validation Demo",
+                  "size": 3,
+                  "alignment": "left",
+                  "color": "dark"
+                }
+              },
+              {
+                "id": "Text",
+                "props": {
+                  "instanceId": "playground-validation-demo-intro",
+                  "content": "<p>These buttons are intentionally misconfigured to trigger validation. Edit them to see error and warning alerts in the property panel. Notice the red badge on the control bar!</p>",
+                  "size": "sm",
+                  "color": "gray",
+                  "alignment": "left"
+                }
+              },
+              {
+                "id": "Button",
+                "props": {
+                  "instanceId": "playground-validation-error",
+                  "label": "",
+                  "variant": "default",
+                  "link": {
+                    "url": "",
+                    "title": "",
+                    "target": "_self"
+                  }
+                }
+              },
+              {
+                "id": "Button",
+                "props": {
+                  "instanceId": "playground-validation-warning",
+                  "label": "Has a bad link",
+                  "variant": "primary",
+                  "link": {
+                    "url": "not-a-valid-url",
+                    "title": "Broken link",
+                    "target": "_self"
+                  }
+                }
+              },
+              {
+                "id": "Button",
+                "props": {
+                  "instanceId": "playground-validation-ok",
+                  "label": "This one is valid!",
+                  "variant": "primary",
+                  "link": {
+                    "url": "https://example.com",
+                    "title": "Valid link",
+                    "target": "_blank"
+                  }
+                }
+              }
+            ],
+            "backgroundColor": "tertiary",
+            "alignment": "left",
+            "height": "auto",
+            "width": "800px",
+            "horizontalCenter": true,
+            "gap": "1rem",
+            "padding": "2.5rem"
+          }
+        },
+        {
+          "id": "Section",
+          "props": {
+            "instanceId": "playground-tabs-demo",
+            "children": [
+              {
+                "id": "Title",
+                "props": {
+                  "instanceId": "playground-tabs-demo-title",
+                  "label": "Property Tabs Demo",
+                  "size": 3,
+                  "alignment": "left",
+                  "color": "dark"
+                }
+              },
+              {
+                "id": "Text",
+                "props": {
+                  "instanceId": "playground-tabs-demo-intro",
+                  "content": "<p>Click the edit icon on the button below. Its properties are organized into <strong>Content</strong> and <strong>Style</strong> tabs instead of a flat list. This is configured via <code>propertyGroups</code> in the component metadata.</p>",
+                  "size": "sm",
+                  "color": "gray",
+                  "alignment": "left"
+                }
+              },
+              {
+                "id": "Button",
+                "props": {
+                  "instanceId": "playground-tabs-btn",
+                  "label": "I have tabbed properties!",
+                  "variant": "primary",
+                  "isPrimary": true,
+                  "link": {
+                    "url": "https://example.com",
+                    "title": "Example",
+                    "target": "_self"
+                  }
+                }
+              }
+            ],
+            "backgroundColor": "secondary",
+            "alignment": "left",
+            "height": "auto",
+            "width": "800px",
+            "horizontalCenter": true,
+            "gap": "1rem",
+            "padding": "2.5rem"
+          }
+        },
+        {
+          "id": "Section",
+          "props": {
+            "instanceId": "playground-copypaste-demo",
+            "children": [
+              {
+                "id": "Title",
+                "props": {
+                  "instanceId": "playground-copypaste-demo-title",
+                  "label": "Copy / Paste / Duplicate",
+                  "size": 3,
+                  "alignment": "left",
+                  "color": "dark"
+                }
+              },
+              {
+                "id": "Text",
+                "props": {
+                  "instanceId": "playground-copypaste-demo-intro",
+                  "content": "<p>Hover over any widget's control bar to see the new buttons: <strong>copy</strong> (clipboard), <strong>paste</strong> (pin — only visible after copying), and <strong>duplicate</strong> (clone icon). Try duplicating this text block!</p>",
+                  "size": "sm",
+                  "color": "gray",
+                  "alignment": "left"
+                }
+              },
+              {
+                "id": "Text",
+                "props": {
+                  "instanceId": "playground-copypaste-demo-target",
+                  "content": "<p><strong>Try me!</strong> Use the duplicate button (double-square icon) on my control bar to create a copy right below me.</p>",
+                  "size": "sm",
+                  "color": "blue",
+                  "alignment": "left"
+                }
+              }
+            ],
+            "backgroundColor": "tertiary",
+            "alignment": "left",
+            "height": "auto",
+            "width": "800px",
+            "horizontalCenter": true,
+            "gap": "1rem",
+            "padding": "2.5rem"
+          }
+        },
+        {
+          "id": "Section",
+          "props": {
+            "instanceId": "playground-picker-demo",
+            "children": [
+              {
+                "id": "Title",
+                "props": {
+                  "instanceId": "playground-picker-demo-title",
+                  "label": "Component Picker with Categories",
+                  "size": 3,
+                  "alignment": "left",
+                  "color": "dark"
+                }
+              },
+              {
+                "id": "Text",
+                "props": {
+                  "instanceId": "playground-picker-demo-intro",
+                  "content": "<p>Click any <strong>+</strong> button (above or below a widget) to open the revamped component picker. Components are now grouped by category (<em>Layout</em>, <em>Content</em>, <em>Interactive</em>, <em>Media</em>) with visual thumbnails, descriptions, and a search bar. Try it!</p>",
+                  "size": "sm",
+                  "color": "gray",
+                  "alignment": "left"
+                }
+              }
+            ],
+            "backgroundColor": "secondary",
+            "alignment": "left",
+            "height": "auto",
+            "width": "800px",
+            "horizontalCenter": true,
+            "gap": "1rem",
+            "padding": "2.5rem"
+          }
+        },
+        {
+          "id": "SplitLayout",
+          "props": {
+            "instanceId": "playground-split-sandbox",
+            "leftChildren": [
+              {
+                "id": "Title",
+                "props": {
+                  "instanceId": "playground-sandbox-left-title",
+                  "label": "Sandbox A",
+                  "size": 4,
+                  "alignment": "center",
+                  "color": "dark"
+                }
+              },
+              {
+                "id": "Text",
+                "props": {
+                  "instanceId": "playground-sandbox-left-text",
+                  "content": "<p>Drag widgets between these two columns. Copy a widget from here and paste it on the right side. Or add new components using the + buttons.</p>",
+                  "size": "sm",
+                  "color": "gray",
+                  "alignment": "center"
+                }
+              },
+              {
+                "id": "Button",
+                "props": {
+                  "instanceId": "playground-sandbox-left-btn",
+                  "label": "Copy me to the right!",
+                  "variant": "primary",
+                  "link": {
+                    "url": "https://example.com",
+                    "title": "Example",
+                    "target": "_self"
+                  }
+                }
+              }
+            ],
+            "rightChildren": [
+              {
+                "id": "Title",
+                "props": {
+                  "instanceId": "playground-sandbox-right-title",
+                  "label": "Sandbox B",
+                  "size": 4,
+                  "alignment": "center",
+                  "color": "dark"
+                }
+              },
+              {
+                "id": "Text",
+                "props": {
+                  "instanceId": "playground-sandbox-right-text",
+                  "content": "<p>This is the right column. Paste widgets here, drag them from the left, or add new ones. All the new features work across containers!</p>",
+                  "size": "sm",
+                  "color": "gray",
+                  "alignment": "center"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "id": "Section",
+          "props": {
+            "instanceId": "playground-footer",
+            "children": [
+              {
+                "id": "Text",
+                "props": {
+                  "instanceId": "playground-footer-text",
+                  "content": "<p>Open this page at <code>/editor/feature-playground</code> to try everything out!</p>",
+                  "size": "md",
+                  "color": "white",
+                  "alignment": "center"
+                }
+              }
+            ],
+            "backgroundColor": "primary",
+            "alignment": "center",
+            "height": "auto",
+            "width": "100%",
+            "horizontalCenter": true,
+            "verticalCenter": true,
+            "gap": "1rem",
+            "padding": "2rem"
+          }
+        }
+      ]
+    }
+  }
+]

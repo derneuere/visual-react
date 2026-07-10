@@ -1,0 +1,24 @@
+[
+  {
+    "id": "Page",
+    "props": {
+      "instanceId": "5f8aa958-0779-4388-bb8a-c304dd58f869",
+      "title": "New Page",
+      "children": [
+        {
+          "id": "Section",
+          "props": {
+            "title": "",
+            "instanceId": "447bb0d9-59fb-40ce-8f69-9fe15e6f2cfa",
+            "children": [],
+            "backgroundColor": "secondary",
+            "alignment": "center",
+            "height": "100%",
+            "width": "100%",
+            "noPadding": true
+          }
+        }
+      ]
+    }
+  }
+]

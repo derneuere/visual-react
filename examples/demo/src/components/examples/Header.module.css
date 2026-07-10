@@ -1,0 +1,57 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2rem 14rem;
+  background-color: #fefefe;
+}
+
+.navGroup {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.navItem {
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 1.25rem; /* Corresponds to "xl" */
+}
+
+.avatar {
+  cursor: pointer;
+}
+
+.hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  gap: 0.3rem;
+}
+
+.hamburger div {
+  width: 25px;
+  height: 3px;
+  background-color: black;
+}
+
+.mobileMenu {
+  display: none;
+}
+
+@media (max-width: 1064px) {
+  .header {
+    padding: 1rem 2rem;
+  }
+
+  .navGroup {
+    display: none; /* Hide navGroup by default on mobile */
+  }
+
+  .mobileMenu {
+    display: block;
+  }
+}

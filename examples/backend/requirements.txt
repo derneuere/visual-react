@@ -1,0 +1,4 @@
+nanodjango>=0.9
+django>=5.0
+django-cors-headers>=4.3
+Pillow>=10.0

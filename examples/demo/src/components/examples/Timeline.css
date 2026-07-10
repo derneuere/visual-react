@@ -1,0 +1,54 @@
+.strike-through-div {
+  position: relative;
+  padding: 1.5rem;
+}
+
+.strike-through-div::after {
+  content: "";
+  position: absolute;
+  top: 50%; /* Position the line in the middle */
+  left: 2.9rem;
+  min-width: calc(100% - 5.5rem);
+  border-top: 5px solid lightblue; /* Line style and color */
+  border-radius: 10px;
+  transform: translateY(0%); /* Adjusts the line to be centered vertically */
+}
+
+.div-container {
+  position: relative;
+  height: 4rem;
+  max-width: 3rem;
+  transform: translateY(-45%); /* Ensure it's perfectly centered */
+  cursor: pointer;
+}
+
+.div-container::before {
+  content: "";
+  position: absolute;
+  left: 50%; /* Position in the middle vertically */
+  bottom: 0;
+  height: 2rem; /* Full width of the div */
+  width: 3px; /* Line thickness */
+  border-radius: 10px;
+  background-color: lightblue; /* Line color */
+  transform: translateY(50%); /* Ensure it's perfectly centered */
+}
+
+.div-large-tick {
+  position: relative;
+  height: 8rem;
+  max-width: 6rem;
+}
+
+.div-large-tick::before {
+  content: "";
+  position: absolute;
+  left: 50%; /* Position in the middle vertically */
+  bottom: 0;
+  height: 8rem; /* Full width of the div */
+  width: 8px; /* Line thickness */
+  border-radius: 10px;
+  background-color: rgb(25, 84, 104); /* Line color */
+  transform: translateY(-20%); /* Ensure it's perfectly centered */
+  z-index: 1;
+}

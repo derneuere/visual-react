@@ -1,0 +1,53 @@
+{
+  "meta": {
+    "title": "blog",
+    "slug": "",
+    "status": "published",
+    "description": "",
+    "ogTitle": "",
+    "ogDescription": "",
+    "ogImage": "",
+    "createdAt": "2026-03-14T20:03:13.138Z",
+    "updatedAt": "2026-03-14T20:03:13.138Z"
+  },
+  "content": [
+    {
+      "id": "Page",
+      "props": {
+        "instanceId": "57812032-b343-4821-a960-7e01764c4582",
+        "title": "blog",
+        "children": [
+          {
+            "id": "Section",
+            "props": {
+              "title": "Article",
+              "instanceId": "fc43c1f4-71d6-4abd-b286-453d91332141",
+              "children": [
+                {
+                  "id": "Title",
+                  "props": {
+                    "label": "Article Title",
+                    "size": 1,
+                    "alignment": "left",
+                    "instanceId": "eaa1eb8c-ad65-44bd-ab43-d44ab91686c0"
+                  }
+                },
+                {
+                  "id": "Text",
+                  "props": {
+                    "label": "Write your article content here. You can add images, quotes, and more by dragging components from the component explorer.",
+                    "instanceId": "984c8e94-f6b7-4441-a2b7-2ba1fc147cc5"
+                  }
+                }
+              ],
+              "backgroundColor": "secondary",
+              "alignment": "stretch",
+              "height": "100%",
+              "width": "100%"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

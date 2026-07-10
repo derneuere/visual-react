@@ -1,0 +1,40 @@
+[
+  {
+    "id": "Page",
+    "props": {
+      "instanceId": 1741860763678,
+      "title": "Default Home Page",
+      "children": [
+        {
+          "id": "Section",
+          "props": {
+            "title": "Welcome",
+            "instanceId": "Section-1741860763678",
+            "children": [
+              {
+                "id": "Title",
+                "props": {
+                  "label": "Welcome to Visual React",
+                  "size": 1,
+                  "alignment": "center",
+                  "instanceId": "Title-1741860763678"
+                }
+              },
+              {
+                "id": "Text",
+                "props": {
+                  "label": "This is a simple page created with Visual React. You can edit this page by clicking on the edit button in the top right corner.",
+                  "instanceId": "Text-1741860763678"
+                }
+              }
+            ],
+            "backgroundColor": "primary",
+            "alignment": "stretch",
+            "height": "100%",
+            "width": "100%"
+          }
+        }
+      ]
+    }
+  }
+]

@@ -1,0 +1,33 @@
+[
+  {
+    "id": "Page",
+    "props": {
+      "instanceId": 1733646119809,
+      "title": "Test Page",
+      "children": [
+        {
+          "id": "Section",
+          "props": {
+            "title": "Test Section",
+            "instanceId": "Section-1733646119809",
+            "children": [
+              {
+                "id": "Title",
+                "props": {
+                  "label": "Test Title",
+                  "size": 1,
+                  "alignment": "center",
+                  "instanceId": 1735660019896
+                }
+              }
+            ],
+            "backgroundColor": "primary",
+            "alignment": "stretch",
+            "height": "100%",
+            "width": "100%"
+          }
+        }
+      ]
+    }
+  }
+]
