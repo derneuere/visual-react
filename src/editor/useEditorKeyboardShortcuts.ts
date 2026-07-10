@@ -11,7 +11,20 @@ function isEditingText(e: KeyboardEvent): boolean {
   );
 }
 
-export function useEditorKeyboardShortcuts() {
+export interface UseEditorKeyboardShortcutsOptions {
+  /**
+   * Gate for the shortcuts (default true). Pass false while the editor is in
+   * a read-only state (e.g. a device preview) so shortcuts — especially
+   * Delete — cannot silently mutate the page.
+   */
+  enabled?: boolean;
+}
+
+export function useEditorKeyboardShortcuts(
+  options?: UseEditorKeyboardShortcutsOptions
+) {
+  const enabled = options?.enabled ?? true;
+
   const {
     selectedInstanceId,
     setSelectedInstanceId,
@@ -27,6 +40,8 @@ export function useEditorKeyboardShortcuts() {
   } = useComponentRegistry();
 
   useEffect(() => {
+    if (!enabled) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isEditingText(e)) return;
 
@@ -75,6 +90,7 @@ export function useEditorKeyboardShortcuts() {
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [
+    enabled,
     selectedInstanceId,
     setSelectedInstanceId,
     clipboard,

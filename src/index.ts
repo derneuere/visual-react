@@ -2,6 +2,8 @@
 export type {
   ComponentMetadata,
   FieldType,
+  FieldValue,
+  FieldMetadataEntry,
   Instance,
   LinkValue,
   ValidationResult,
@@ -24,6 +26,7 @@ export type { EditorContextValue } from './editor/types';
 export { EditorProvider } from './editor/provider';
 export { useEditor } from './editor/hooks';
 export { useEditorKeyboardShortcuts } from './editor/useEditorKeyboardShortcuts';
+export type { UseEditorKeyboardShortcutsOptions } from './editor/useEditorKeyboardShortcuts';
 
 // Render-path instrumentation — wrap each rendered instance (e.g. tag the
 // DOM for an iframe canvas). React-only; consumed by ComponentRenderer in

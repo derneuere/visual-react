@@ -109,9 +109,15 @@ export interface Instance {
   };
 }
 
-// Registry entry for a registered component
+// Registry entry for a registered component.
+//
+// `Component` is optional to support METADATA-ONLY registries: an editor that
+// renders the page in a separate document (e.g. the iframe canvas) never
+// renders components itself, so its registry entries only need metadata
+// (defaultProps for inserts, editableProps for the property panel and
+// container detection). ComponentRenderer skips entries without a Component.
 export interface ComponentRegistryEntry {
-  Component: React.ComponentType<ReactNode>;
+  Component?: React.ComponentType<ReactNode>;
   metadata: ComponentMetadata;
 }
 
