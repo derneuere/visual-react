@@ -21,6 +21,7 @@ export default defineConfig({
       entry: {
         index: resolve(__dirname, 'src/index.ts'),
         editor: resolve(__dirname, 'src/editor.ts'),
+        'editor-dnd': resolve(__dirname, 'src/editor-dnd.ts'),
         canvas: resolve(__dirname, 'src/canvas.ts'),
         'canvas-dnd': resolve(__dirname, 'src/canvas-dnd.ts'),
       },

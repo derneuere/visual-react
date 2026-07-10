@@ -1,6 +1,6 @@
 {
   "name": "@derneuere/visual-react",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "A React-based visual CMS framework: headless page/component tree core with an optional Mantine-based visual editor",
   "license": "MIT",
   "type": "module",
@@ -40,6 +40,10 @@
     "./editor": {
       "types": "./dist/editor.d.ts",
       "import": "./dist/editor.js"
+    },
+    "./editor/dnd": {
+      "types": "./dist/editor-dnd.d.ts",
+      "import": "./dist/editor-dnd.js"
     },
     "./canvas": {
       "types": "./dist/canvas.d.ts",

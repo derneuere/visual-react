@@ -28,6 +28,13 @@ export { useEditor } from './editor/hooks';
 export { useEditorKeyboardShortcuts } from './editor/useEditorKeyboardShortcuts';
 export type { UseEditorKeyboardShortcutsOptions } from './editor/useEditorKeyboardShortcuts';
 
+// Headless editor building blocks — typed field descriptors, breadcrumb
+// paths, undo/redo, and the transient page-root wrapper. React-only; the
+// dnd-kit orchestration (useEditorDnd & friends) lives in the
+// "@derneuere/visual-react/editor/dnd" entry because @dnd-kit/* are optional
+// peers. See docs/headless-editor.md.
+export * from './headless';
+
 // Render-path instrumentation — wrap each rendered instance (e.g. tag the
 // DOM for an iframe canvas). React-only; consumed by ComponentRenderer in
 // the "/editor" entry.

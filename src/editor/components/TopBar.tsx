@@ -1,9 +1,16 @@
-import { Switch, Group, Button } from "@mantine/core";
+import { Switch, Group, Button, ActionIcon, Tooltip } from "@mantine/core";
 
 import { useEditor } from "../hooks";
 import { useComponentRegistry } from "../../registry/hooks";
+import { useEditorHistory } from "../../headless/useEditorHistory";
 import { useStorageAdapter } from "../../storage/hooks";
-import { IconSend, IconFileExport, IconDeviceFloppy } from "@tabler/icons-react";
+import {
+  IconSend,
+  IconFileExport,
+  IconDeviceFloppy,
+  IconArrowBackUp,
+  IconArrowForwardUp,
+} from "@tabler/icons-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { PageData, PageMeta } from "../../storage/types";
 
@@ -72,6 +79,7 @@ const TopBar = ({ exportUrl = "/api/export", onExport }: TopBarProps = {}) => {
   });
 
   const { isPreview, setIsPreview } = useEditor();
+  const { undo, redo, canUndo, canRedo } = useEditorHistory();
 
   const exportSite = useMutation({
     mutationFn: async () => {
@@ -102,6 +110,31 @@ const TopBar = ({ exportUrl = "/api/export", onExport }: TopBarProps = {}) => {
         label={isPreview ? "Previewing" : "Not Previewing"}
         color="teal"
       />
+      {/* Undo/redo — disabled in preview (read-only, like the keyboard shortcuts) */}
+      <Group gap={4}>
+        <Tooltip label="Undo (Ctrl+Z)">
+          <ActionIcon
+            variant="default"
+            size="lg"
+            aria-label="Undo"
+            onClick={undo}
+            disabled={!canUndo || isPreview}
+          >
+            <IconArrowBackUp size={16} />
+          </ActionIcon>
+        </Tooltip>
+        <Tooltip label="Redo (Ctrl+Shift+Z)">
+          <ActionIcon
+            variant="default"
+            size="lg"
+            aria-label="Redo"
+            onClick={redo}
+            disabled={!canRedo || isPreview}
+          >
+            <IconArrowForwardUp size={16} />
+          </ActionIcon>
+        </Tooltip>
+      </Group>
       <Button
         leftSection={<IconDeviceFloppy size={14} />}
         variant="default"

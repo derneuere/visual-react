@@ -20,6 +20,14 @@ import {
   findNode,
   removeNode,
 } from "../utils/treeUtils";
+import {
+  applyHistoryChange,
+  clearHistory as clearHistoryState,
+  createHistory,
+  redoHistory,
+  undoHistory,
+  DEFAULT_HISTORY_LIMIT,
+} from "../utils/history";
 
 const isComponentListField = (value: FieldType): boolean => {
   return value === "componentlist" ||
@@ -86,6 +94,12 @@ export interface ComponentRegistryContextValue {
   registerEditingExtension: (name: string, Component: React.ComponentType<EditingExtensionProps>) => void;
   registerEditingExtensions: (extensions: { name: string; Component: React.ComponentType<EditingExtensionProps> }[]) => void;
   getEditingExtension: (name: string) => { Component: React.ComponentType<EditingExtensionProps> } | undefined;
+  /** Undo/redo over the page tree (see useEditorHistory). */
+  undo: () => void;
+  redo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
+  clearHistory: () => void;
 }
 
 // Provider props type
@@ -93,20 +107,71 @@ interface ComponentRegistryProviderProps {
   children: ReactNode;
   initialRegistry?: ComponentRegistry;
   initialPage?: Instance[];
+  /** Max undo-stack depth for tree mutations (default 100). */
+  historyLimit?: number;
 }
+
+// How long (ms) rapid same-instance+fields updateInstanceProps calls keep
+// collapsing into one undo step (typing = one undo).
+const PROP_COALESCE_WINDOW_MS = 500;
 
 export const ComponentRegistryProvider: React.FC<
   ComponentRegistryProviderProps
-> = ({ children, initialRegistry, initialPage }) => {
+> = ({
+  children,
+  initialRegistry,
+  initialPage,
+  historyLimit = DEFAULT_HISTORY_LIMIT,
+}) => {
   const [registry, setRegistry] = useState<ComponentRegistry>(initialRegistry ?? {});
   const [extensionRegistry, setExtensionRegistry] = useState<EditingExtensionRegistry>({});
-  const [currentPage, setCurrentPage] = useState<Instance[]>(initialPage ?? []);
+  // The page tree lives inside a bounded undo/redo history: EVERY tree
+  // mutation funnels through applyChange below (setCurrentPage is the public
+  // face; updateInstanceProps/deleteNode/duplicateNode/pasteNode/addChild
+  // all build on it), so undo/redo covers any editor UI on top.
+  const [history, setHistory] = useState(() =>
+    createHistory<Instance[]>(initialPage ?? [])
+  );
+  const currentPage = history.present;
   const [pagePath, setPagePath] = useState<string>("currentpage");
   const [loadedPage, setLoadedPage] = useState<Instance[]>(initialPage ?? []);
   const [pageMeta, setPageMeta] = useState<PageMeta | null>(null);
 
+  /**
+   * Apply a tree change through the history. `coalesceKey` (non-null) lets
+   * rapid successive changes with the same key collapse into one undo step.
+   */
+  const applyChange = (
+    action: React.SetStateAction<Instance[]>,
+    coalesceKey?: string
+  ) => {
+    setHistory((h) => {
+      const next =
+        typeof action === "function"
+          ? (action as (prev: Instance[]) => Instance[])(h.present)
+          : action;
+      return applyHistoryChange(h, next, {
+        coalesceKey,
+        coalesceWindowMs: PROP_COALESCE_WINDOW_MS,
+        limit: historyLimit,
+      });
+    });
+  };
+
+  const setCurrentPage: React.Dispatch<React.SetStateAction<Instance[]>> = (
+    action
+  ) => applyChange(action);
+
+  const undo = () => setHistory((h) => undoHistory(h));
+  const redo = () => setHistory((h) => redoHistory(h));
+  const clearHistory = () => setHistory((h) => clearHistoryState(h));
+  const canUndo = history.past.length > 0;
+  const canRedo = history.future.length > 0;
+
   const setPage = (data: PageData) => {
-    setCurrentPage(data.content);
+    // A fresh page load is not an undoable change: reset the history so
+    // undo never crosses page boundaries.
+    setHistory(createHistory(data.content));
     setLoadedPage(data.content);
     setPageMeta(data.meta);
   };
@@ -184,19 +249,25 @@ export const ComponentRegistryProvider: React.FC<
     instanceId: number | string,
     newProps: Record<string, FieldValue>
   ) => {
-    const prevNode = findNode(
-      currentPage,
-      instanceId,
-      hasChildren,
-      getChildren
-    );
-    if (!prevNode) {
-      return;
-    }
-    const node = { ...prevNode, props: { ...prevNode.props, ...newProps } };
-    setCurrentPage((prevPage) =>
-      findAndReplaceNode(prevPage, instanceId, node, hasChildren, getChildren)
-    );
+    // Coalesce rapid updates to the SAME instance + field set into one undo
+    // step (typing into a text input = one undo, not one per keystroke).
+    const coalesceKey = `props:${String(instanceId)}:${Object.keys(newProps)
+      .sort()
+      .join(",")}`;
+    applyChange((prevPage) => {
+      const prevNode = findNode(prevPage, instanceId, hasChildren, getChildren);
+      if (!prevNode) {
+        return prevPage;
+      }
+      const node = { ...prevNode, props: { ...prevNode.props, ...newProps } };
+      return findAndReplaceNode(
+        prevPage,
+        instanceId,
+        node,
+        hasChildren,
+        getChildren
+      );
+    }, coalesceKey);
   };
 
   const downloadTree = () => {
@@ -231,6 +302,9 @@ export const ComponentRegistryProvider: React.FC<
 
   const switchPage = (pagePath: string) => {
     setPagePath(pagePath);
+    // Undo must not cross page boundaries (the subsequent setPage resets the
+    // history anyway, but a consumer may swap trees via setCurrentPage too).
+    setHistory((h) => clearHistoryState(h));
   };
 
   const validateInstance = (instanceId: number | string): ValidationResult[] => {
@@ -327,6 +401,11 @@ export const ComponentRegistryProvider: React.FC<
         registerEditingExtension,
         registerEditingExtensions,
         getEditingExtension,
+        undo,
+        redo,
+        canUndo,
+        canRedo,
+        clearHistory,
       }}
     >
       {children}

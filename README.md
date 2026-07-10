@@ -27,6 +27,12 @@ your own).
 - **Iframe canvas** — `/canvas`: typed same-origin bridge, overlay-drawn
   selection/hover/drop indicators, device presets with scale-to-fit, and
   optional dnd-kit glue (`/canvas/dnd`). See [docs/canvas.md](docs/canvas.md).
+- **Headless editor hooks** — build your own editor UI: `useEditorDnd`
+  (`/editor/dnd`) for the full drag-and-drop orchestration,
+  `useInstanceFields` for a typed property panel, `useInstancePath`
+  (breadcrumbs), `useEditorHistory` (undo/redo), and the
+  `createPageRoot`/`unwrapPageRoot` page wrapper. See
+  [docs/headless-editor.md](docs/headless-editor.md).
 
 ## Repository layout
 
@@ -49,8 +55,9 @@ The package is split so the headless core stays dependency-free:
 
 | Import | Contents | Extra dependencies needed |
 | --- | --- | --- |
-| `@derneuere/visual-react` | Headless core: component registry, editor state (`EditorProvider`, `useEditor`, keyboard shortcuts), storage adapters + migration, auth, static mode, templates, tree/page utils (`moveInstance`, `computeDropPosition`, …), `ComponentLoader`, `ContentTag`, `WrapInstanceProvider` | none — only `react`/`react-dom` |
+| `@derneuere/visual-react` | Headless core: component registry, editor state (`EditorProvider`, `useEditor`, keyboard shortcuts), undo/redo (`useEditorHistory`), headless property panel (`useInstanceFields`), breadcrumbs (`useInstancePath`), page-root wrapper (`createPageRoot`/`unwrapPageRoot`), storage adapters + migration, auth, static mode, templates, tree/page utils (`moveInstance`, `computeDropPosition`, …), `ComponentLoader`, `ContentTag`, `WrapInstanceProvider` | none — only `react`/`react-dom` |
 | `@derneuere/visual-react/editor` | The in-document editing surface: `Editor`, sidebars/modals, `ComponentRenderer`, `Block`, `SortableItem`, `Draggable`, `RichTextEditor` | the optional peers below |
+| `@derneuere/visual-react/editor/dnd` | Headless dnd orchestration for custom editors (`useEditorDnd`, `usePaletteDraggable`, `useTreeDroppable`) — see [docs/headless-editor.md](docs/headless-editor.md) | `@dnd-kit/core`, `@dnd-kit/sortable` |
 | `@derneuere/visual-react/editor.css` | Stylesheet for the editor entry (import it once alongside `/editor`) | — |
 | `@derneuere/visual-react/canvas` | Iframe canvas: `CanvasBridge` (iframe side), `CanvasHost` (parent side), the typed bridge protocol, `CANVAS_DEVICE_PRESETS` — see [docs/canvas.md](docs/canvas.md) | none — only `react`/`react-dom` |
 | `@derneuere/visual-react/canvas/dnd` | dnd-kit glue for the canvas (`useCanvasDnd`): palette drags onto the iframe via virtual droppables | `@dnd-kit/core` |
@@ -63,7 +70,7 @@ The package is split so the headless core stays dependency-free:
 | `@mantine/core`, `@mantine/hooks`, `@mantine/tiptap` | optional | `/editor` |
 | `@tabler/icons-react` | optional | `/editor` |
 | `@tiptap/react`, `@tiptap/starter-kit`, `@tiptap/extension-link`, `@tiptap/pm` | optional | `/editor` (rich text) |
-| `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities` | optional | `/editor`; `@dnd-kit/core` also for `/canvas/dnd` |
+| `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities` | optional | `/editor`; `@dnd-kit/core` + `@dnd-kit/sortable` for `/editor/dnd`; `@dnd-kit/core` for `/canvas/dnd` |
 | `@tanstack/react-query` | optional | `/editor` |
 | `react-error-boundary` | optional | `/editor` |
 

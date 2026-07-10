@@ -37,6 +37,8 @@ export function useEditorKeyboardShortcuts(
     duplicateNode,
     pasteNode,
     findInstance,
+    undo,
+    redo,
   } = useComponentRegistry();
 
   useEffect(() => {
@@ -50,6 +52,21 @@ export function useEditorKeyboardShortcuts(
       // Escape — deselect
       if (e.key === "Escape") {
         setSelectedInstanceId(null);
+        return;
+      }
+
+      // Ctrl/Cmd+Z — undo, Ctrl/Cmd+Shift+Z — redo (works without selection)
+      if (isMod && (e.key === "z" || e.key === "Z")) {
+        e.preventDefault();
+        if (e.shiftKey) redo();
+        else undo();
+        return;
+      }
+
+      // Ctrl/Cmd+Y — redo
+      if (isMod && e.key === "y") {
+        e.preventDefault();
+        redo();
         return;
       }
 
@@ -99,5 +116,7 @@ export function useEditorKeyboardShortcuts(
     duplicateNode,
     pasteNode,
     findInstance,
+    undo,
+    redo,
   ]);
 }

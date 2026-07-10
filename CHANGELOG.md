@@ -3,6 +3,86 @@
 All notable changes to `@derneuere/visual-react` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 0.3.0
+
+The headless editor controller layer: everything a custom editor UI needs —
+dnd orchestration, typed property descriptors, breadcrumbs, page-root
+wrapping and undo/redo — is now public API. The bundled Mantine editor runs
+on the same hooks. Fully additive: no existing API changed shape.
+See [docs/headless-editor.md](docs/headless-editor.md).
+
+### Added
+
+- **New entry `@derneuere/visual-react/editor/dnd`** — headless dnd-kit
+  orchestration. Lives in a dedicated entry (mirroring `./canvas/dnd`) so
+  `@dnd-kit/*` stay optional peers; the core `"."` entry still never loads
+  dnd-kit.
+  - `useEditorDnd(options?)` returns `{ sensors, collisionDetection,
+    handlers, adding }` for the consumer's own `DndContext` and owns the
+    shared drag semantics (ported from the julis Bezirksseiten editor, the
+    reference implementation): palette-add vs move branching; pointer-Y
+    drop-indicator math via `computeDropPosition` written to
+    `useEditor().dropTarget` (honoring `forceInto` proxies); three-tier
+    collision detection (real droppables via `pointerWithin`, canvas proxies
+    innermost-first by rect area, fallback `rectIntersection` while adding /
+    `closestCorners` while moving); the "nest only into a container on
+    `into` or a specialized non-`children` field" guard; palette-add
+    instance construction (`crypto.randomUUID()` + registry `defaultProps`)
+    choosing `addItemToParent` vs `addItemRelativeToNode`; moves via the
+    shared `moveInstance`; bridge-id → real-id resolution
+    (`findInstanceByBridgeId`) for canvas proxies. Options:
+    `{ canvasController?, isPaletteDrag?, onInstanceAdded?, onInstanceMoved? }`.
+  - `usePaletteDraggable(widgetKey)` and
+    `useTreeDroppable(instanceId, fieldName?)` — thin dnd-kit wrappers that
+    guarantee the `{ source: "palette", widgetKey }` /
+    `{ instanceId, fieldName }` data contracts; `useTreeDroppable` also
+    returns the resolved indicator state (`isActiveTarget`, `position`) for
+    the row.
+- **Headless property/inspection hooks (core entry, react-only):**
+  - `useInstanceFields(instance)` — ordered, typed field descriptors
+    (`key`, normalized `fieldType` discriminant, `label`/`description`/
+    `warning`, `options`, `min`/`max`/`step`, `toolbar`, `group`,
+    `structural` for componentlist, `visible` with `conditionalProperties`
+    resolved, `error`/`validation` from `validateInstance`, `value`,
+    `setValue`) covering every FieldType incl. color/objectlist/
+    componentlist. A property panel reduces to a `fieldType → input
+    component` map. The pure core (`computeInstanceFields`,
+    `fieldTypeName`, `isPropertyVisible`) is exported too.
+  - `useInstancePath(instanceId)` — root-first ancestry for breadcrumbs.
+- **Undo/redo.** `ComponentRegistryProvider` now records a bounded history
+  (default 100 steps, `historyLimit` prop) around EVERY tree mutation
+  (`setCurrentPage` and everything built on it: `updateInstanceProps`,
+  `deleteNode`, `duplicateNode`, `pasteNode`, `addChild`, drag moves).
+  Rapid `updateInstanceProps` calls to the same instance+fields coalesce
+  within ~500 ms, so typing is one undo step; any new mutation clears the
+  redo stack; history resets on page switches (`setPage`/`switchPage`).
+  Exposed as `useEditorHistory(): { undo, redo, canUndo, canRedo, clear }`;
+  `useEditorKeyboardShortcuts` adds Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z and
+  Ctrl/Cmd+Y (respecting the `enabled` gate); the bundled TopBar gained
+  undo/redo buttons. The pure stack lives in `utils/history` (exported:
+  `createHistory`, `applyHistoryChange`, `undoHistory`, `redoHistory`,
+  `clearHistory`, `HistoryState`) and is unit-tested for coalescing,
+  bounds and redo invalidation.
+- **Transient page-root wrapper formalized** (previously a consumer-side
+  trick): `createPageRoot(content, rootInstanceId?)` /
+  `unwrapPageRoot(tree)` / `isPageRoot` / `pageRootMetadata` /
+  `PAGE_ROOT_COMPONENT_ID` (`"__root__"`) / `PAGE_ROOT_INSTANCE_ID`
+  (`"__page_root__"`). Wrapping the flat page content in one root instance
+  gives every node a parent, so the tree utils' top-level special cases
+  (`ROOT_PARENT_ID`, `addItemRelativeToNode`'s parentless no-op) never
+  apply; `createPageRoot` rejects the reserved `"root"` instance id.
+
+### Changed
+
+- The bundled Mantine editor's dnd orchestration (sensors, collision
+  detection, drag handlers) now comes from `useEditorDnd` — proving parity
+  between the bundled and headless paths. Palette items keep working
+  through their legacy `{ add: true }` drag data, which
+  `useEditorDnd`'s default `isPaletteDrag` accepts alongside the new
+  `{ source: "palette" }` contract.
+- `updateInstanceProps` resolves the target node inside the state updater
+  (no stale-closure window) — behavior is otherwise unchanged.
+
 ## 0.2.2
 
 ### Added
