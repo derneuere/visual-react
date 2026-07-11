@@ -16,7 +16,26 @@ export type FieldType =
   | { type: "slider"; min: number; max: number; step?: number }
   | { type: "color"; options: string[] }
   | { type: "componentlist"; only?: string[] }
-  | { type: "objectlist" }
+  | {
+      type: "objectlist";
+      /**
+       * Per-item field definitions: prop key -> FieldType, rendered by
+       * property panels as a repeater (card per item with sub-inputs).
+       * Keep item fields scalar (string/text/enum/boolean/image/link/...) —
+       * nested componentlist/objectlist entries are not supported.
+       */
+      fields?: Record<string, FieldType>;
+      /**
+       * Labels / descriptions for the per-item fields — same shape as
+       * ComponentMetadata.fieldMetadata, keyed by the `fields` keys.
+       */
+      fieldMetadata?: Record<string, FieldMetadataEntry>;
+      /**
+       * Key (from `fields`) whose value titles each item card in the panel;
+       * panels fall back to the first string-ish field when omitted.
+       */
+      itemLabel?: string;
+    }
   | { type: "text"; toolbar?: ("bold" | "italic" | "link" | "heading" | "bulletList" | "orderedList" | "code" | "blockquote" | "strikethrough")[] }
   | "componentlist";
 
